@@ -1,19 +1,47 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Supabase configuration
 // These are publishable keys - safe to include in frontend code
+// IMPORTANT: Update the SUPABASE_ANON_KEY with your full anon key from Supabase dashboard
 const SUPABASE_URL = 'https://bsloebohbsepdfoldsud.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbG9lYm9oYnNlcGRmb2xkc3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY4OTc2NjAsImV4cCI6MjAyMjQ3MzY2MH0';
 
-// Note: The anon key above is truncated from your screenshot. 
-// Please update it with the FULL anon key from your Supabase dashboard.
+// Placeholder - REPLACE THIS with your full anon key
+const SUPABASE_ANON_KEY = 'YOUR_FULL_ANON_KEY_HERE';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-});
+let supabase: SupabaseClient;
+let isSupabaseConfigured = false;
 
-export const isSupabaseConfigured = true;
+try {
+  if (SUPABASE_ANON_KEY === 'YOUR_FULL_ANON_KEY_HERE') {
+    console.warn('Supabase anon key not configured. Please update src/integrations/supabase/client.ts with your anon key.');
+    // Create a placeholder client that won't work but won't crash
+    supabase = createClient('https://placeholder.supabase.co', 'placeholder', {
+      auth: {
+        storage: localStorage,
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
+  } else {
+    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: localStorage,
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
+    isSupabaseConfigured = true;
+  }
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error);
+  // Create a placeholder client
+  supabase = createClient('https://placeholder.supabase.co', 'placeholder', {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  });
+}
+
+export { supabase, isSupabaseConfigured };
