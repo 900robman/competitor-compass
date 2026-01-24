@@ -3,6 +3,11 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Debug: Log environment variable status
+console.log('Supabase URL defined:', !!SUPABASE_URL);
+console.log('Supabase Anon Key defined:', !!SUPABASE_ANON_KEY);
+console.log('All env vars:', Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')));
+
 // Create a dummy client if env vars are missing (for development/preview purposes)
 // This prevents the app from crashing before the secrets are properly loaded
 let supabase: SupabaseClient;
