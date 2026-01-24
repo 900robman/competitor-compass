@@ -1,9 +1,12 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Environment variables for Supabase connection
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-// Debug: Log environment variable status
+// Debug logging - will be removed once working
+console.log('[Supabase] URL configured:', !!SUPABASE_URL, SUPABASE_URL ? `(${SUPABASE_URL.substring(0, 20)}...)` : '(empty)');
+console.log('[Supabase] Key configured:', !!SUPABASE_ANON_KEY, SUPABASE_ANON_KEY ? '(key present)' : '(empty)');
 console.log('Supabase URL defined:', !!SUPABASE_URL);
 console.log('Supabase Anon Key defined:', !!SUPABASE_ANON_KEY);
 console.log('All env vars:', Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')));
