@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, isSupabaseConfigured } from '@/integrations/supabase/client';
 
 interface AuthContextType {
   user: User | null;
@@ -39,20 +39,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+    if (!isSupabaseConfigured) {
+      console.error('Supabase is not configured. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+      return { error: new Error('Supabase is not configured. Please check your environment variables.') };
+    }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        console.error('Sign in error:', error.message, error);
+      }
+      return { error: error as Error | null };
+    } catch (err) {
+      console.error('Sign in network error:', err);
+      return { error: err as Error };
+    }
   };
 
   const signUp = async (email: string, password: string) => {
+    if (!isSupabaseConfigured) {
+      console.error('Supabase is not configured. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+      return { error: new Error('Supabase is not configured. Please check your environment variables.') };
+    }
     const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
-    });
-    return { error: error as Error | null };
+    console.log('Attempting signup with redirect URL:', redirectUrl);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+        },
+      });
+      if (error) {
+        console.error('Sign up error:', error.message, error);
+      } else {
+        console.log('Sign up response:', data);
+      }
+      return { error: error as Error | null };
+    } catch (err) {
+      console.error('Sign up network error:', err);
+      return { error: err as Error };
+    }
   };
 
   const signOut = async () => {
