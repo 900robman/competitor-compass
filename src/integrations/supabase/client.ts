@@ -1,39 +1,19 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
-// Environment variables for Supabase connection
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+// Supabase configuration
+// These are publishable keys - safe to include in frontend code
+const SUPABASE_URL = 'https://bsloebohbsepdfoldsud.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbG9lYm9oYnNlcGRmb2xkc3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY4OTc2NjAsImV4cCI6MjAyMjQ3MzY2MH0';
 
-// Debug logging - will be removed once working
-console.log('[Supabase] URL configured:', !!SUPABASE_URL, SUPABASE_URL ? `(${SUPABASE_URL.substring(0, 20)}...)` : '(empty)');
-console.log('[Supabase] Key configured:', !!SUPABASE_ANON_KEY, SUPABASE_ANON_KEY ? '(key present)' : '(empty)');
-console.log('Supabase URL defined:', !!SUPABASE_URL);
-console.log('Supabase Anon Key defined:', !!SUPABASE_ANON_KEY);
-console.log('All env vars:', Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')));
+// Note: The anon key above is truncated from your screenshot. 
+// Please update it with the FULL anon key from your Supabase dashboard.
 
-// Create a dummy client if env vars are missing (for development/preview purposes)
-// This prevents the app from crashing before the secrets are properly loaded
-let supabase: SupabaseClient;
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storage: localStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('Missing Supabase environment variables. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are configured.');
-  // Create a placeholder - operations will fail gracefully
-  supabase = createClient('https://placeholder.supabase.co', 'placeholder-key', {
-    auth: {
-      storage: localStorage,
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  });
-} else {
-  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-      storage: localStorage,
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  });
-}
-
-export { supabase };
-export const isSupabaseConfigured = !!SUPABASE_URL && !!SUPABASE_ANON_KEY;
+export const isSupabaseConfigured = true;
