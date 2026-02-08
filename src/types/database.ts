@@ -37,7 +37,7 @@ export interface Database {
           id: string
           project_id: string
           name: string
-          url: string
+          main_url: string
           crawl_config: Json | null
           active_crawl_job_id: string | null
           last_crawled_at: string | null
@@ -48,7 +48,7 @@ export interface Database {
           id?: string
           project_id: string
           name: string
-          url: string
+          main_url: string
           crawl_config?: Json | null
           active_crawl_job_id?: string | null
           last_crawled_at?: string | null
@@ -59,7 +59,7 @@ export interface Database {
           id?: string
           project_id?: string
           name?: string
-          url?: string
+          main_url?: string
           crawl_config?: Json | null
           active_crawl_job_id?: string | null
           last_crawled_at?: string | null

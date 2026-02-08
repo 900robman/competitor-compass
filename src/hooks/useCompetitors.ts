@@ -90,7 +90,7 @@ export function useUpdateCompetitor() {
     }: {
       id: string;
       projectId: string;
-      updates: { name?: string; url?: string; crawl_config?: any; active_crawl_job_id?: string | null };
+      updates: { name?: string; main_url?: string; crawl_config?: any; active_crawl_job_id?: string | null };
     }) => updateCompetitor(id, updates),
     onSuccess: (_, { id, projectId }) => {
       queryClient.invalidateQueries({ queryKey: ['competitors', projectId] });

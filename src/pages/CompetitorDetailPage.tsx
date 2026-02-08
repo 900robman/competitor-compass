@@ -86,12 +86,12 @@ export default function CompetitorDetailPage() {
                 <CardTitle className="text-xl">{competitor.name}</CardTitle>
                 <CardDescription className="mt-1">
                   <a
-                    href={competitor.url}
+                    href={competitor.main_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-primary hover:underline"
                   >
-                    {competitor.url}
+                    {competitor.main_url}
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </CardDescription>
