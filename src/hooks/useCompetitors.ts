@@ -6,7 +6,9 @@ import {
   updateCompetitor,
   deleteCompetitor,
   getCompetitorInsights,
+  getCompetitorPages,
   getCompetitorCount,
+  getCrawlJobs,
 } from '@/lib/api';
 
 export function useCompetitors(projectId: string) {
@@ -33,10 +35,26 @@ export function useCompetitorCount(projectId: string) {
   });
 }
 
+export function useCompetitorPages(competitorId: string) {
+  return useQuery({
+    queryKey: ['competitorPages', competitorId],
+    queryFn: () => getCompetitorPages(competitorId),
+    enabled: !!competitorId,
+  });
+}
+
 export function useCompetitorInsights(competitorId: string) {
   return useQuery({
     queryKey: ['competitorInsights', competitorId],
     queryFn: () => getCompetitorInsights(competitorId),
+    enabled: !!competitorId,
+  });
+}
+
+export function useCrawlJobs(competitorId: string) {
+  return useQuery({
+    queryKey: ['crawlJobs', competitorId],
+    queryFn: () => getCrawlJobs(competitorId),
     enabled: !!competitorId,
   });
 }
@@ -48,12 +66,12 @@ export function useCreateCompetitor() {
     mutationFn: ({
       projectId,
       name,
-      mainUrl,
+      url,
     }: {
       projectId: string;
       name: string;
-      mainUrl: string;
-    }) => createCompetitor(projectId, name, mainUrl),
+      url: string;
+    }) => createCompetitor(projectId, name, url),
     onSuccess: (_, { projectId }) => {
       queryClient.invalidateQueries({ queryKey: ['competitors', projectId] });
       queryClient.invalidateQueries({ queryKey: ['competitorCount', projectId] });
@@ -72,7 +90,7 @@ export function useUpdateCompetitor() {
     }: {
       id: string;
       projectId: string;
-      updates: { name?: string; main_url?: string; status?: string };
+      updates: { name?: string; url?: string; crawl_config?: any; active_crawl_job_id?: string | null };
     }) => updateCompetitor(id, updates),
     onSuccess: (_, { id, projectId }) => {
       queryClient.invalidateQueries({ queryKey: ['competitors', projectId] });

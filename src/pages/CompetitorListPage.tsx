@@ -63,7 +63,7 @@ export default function CompetitorListPage() {
       await createCompetitor.mutateAsync({
         projectId: projectId!,
         name: name.trim(),
-        mainUrl: url.trim(),
+        url: url.trim(),
       });
       toast.success('Competitor added successfully');
       setDialogOpen(false);
@@ -174,18 +174,18 @@ export default function CompetitorListPage() {
                     <TableCell className="font-medium">{competitor.name}</TableCell>
                     <TableCell>
                       <a
-                        href={competitor.main_url}
+                        href={competitor.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
                         className="flex items-center gap-1 text-primary hover:underline"
                       >
-                        {new URL(competitor.main_url).hostname}
+                        {new URL(competitor.url).hostname}
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={competitor.status} />
+                      <StatusBadge status={competitor.last_crawled_at ? 'Active' : 'Pending'} />
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {competitor.last_crawled_at
