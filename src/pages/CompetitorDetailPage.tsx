@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useProject } from '@/hooks/useProjects';
-import { useCompetitor, useCompetitorInsights } from '@/hooks/useCompetitors';
+import { useCompetitor, useCompetitorPages } from '@/hooks/useCompetitors';
 import { ArrowLeft, ExternalLink, ChevronDown, FileText, Copy, Check, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -21,9 +21,9 @@ export default function CompetitorDetailPage() {
   const navigate = useNavigate();
   const { data: project } = useProject(projectId!);
   const { data: competitor, isLoading: competitorLoading } = useCompetitor(competitorId!);
-  const { data: insights, isLoading: insightsLoading } = useCompetitorInsights(competitorId!);
+  const { data: pages, isLoading: pagesLoading } = useCompetitorPages(competitorId!);
 
-  const [expandedInsight, setExpandedInsight] = useState<string | null>(null);
+  const [expandedPage, setExpandedPage] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleCopy = async (text: string, id: string) => {
@@ -86,17 +86,17 @@ export default function CompetitorDetailPage() {
                 <CardTitle className="text-xl">{competitor.name}</CardTitle>
                 <CardDescription className="mt-1">
                   <a
-                    href={competitor.main_url}
+                    href={competitor.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-primary hover:underline"
                   >
-                    {competitor.main_url}
+                    {competitor.url}
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </CardDescription>
               </div>
-              <StatusBadge status={competitor.status} />
+              <StatusBadge status={competitor.last_crawled_at ? 'Active' : 'Pending'} />
             </div>
           </CardHeader>
           <CardContent>
@@ -109,24 +109,24 @@ export default function CompetitorDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Insights */}
+        {/* Scraped Pages */}
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-foreground">
-            Scraped Pages ({insights?.length ?? 0})
+            Scraped Pages ({pages?.length ?? 0})
           </h2>
         </div>
 
-        {insightsLoading ? (
+        {pagesLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : insights && insights.length > 0 ? (
+        ) : pages && pages.length > 0 ? (
           <div className="space-y-3">
-            {insights.map((insight) => (
+            {pages.map((page) => (
               <Collapsible
-                key={insight.id}
-                open={expandedInsight === insight.id}
-                onOpenChange={(open) => setExpandedInsight(open ? insight.id : null)}
+                key={page.id}
+                open={expandedPage === page.id}
+                onOpenChange={(open) => setExpandedPage(open ? page.id : null)}
               >
                 <Card className="border-border/50">
                   <CollapsibleTrigger className="w-full">
@@ -137,32 +137,32 @@ export default function CompetitorDetailPage() {
                         </div>
                         <div>
                           <p className="font-medium text-foreground">
-                            {insight.title || 'Untitled Page'}
+                            {page.title || 'Untitled Page'}
                           </p>
-                          <p className="text-sm text-muted-foreground">{insight.url}</p>
+                          <p className="text-sm text-muted-foreground">{page.url}</p>
                         </div>
                       </div>
                       <ChevronDown
                         className={`h-5 w-5 text-muted-foreground transition-transform ${
-                          expandedInsight === insight.id ? 'rotate-180' : ''
+                          expandedPage === page.id ? 'rotate-180' : ''
                         }`}
                       />
                     </CardHeader>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <CardContent className="border-t border-border pt-4">
-                      {/* Summary */}
-                      {insight.summary && (
+                      {/* Description */}
+                      {page.description && (
                         <div className="mb-4">
                           <div className="mb-2 flex items-center justify-between">
-                            <h4 className="text-sm font-medium text-foreground">AI Summary</h4>
+                            <h4 className="text-sm font-medium text-foreground">Description</h4>
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-8"
-                              onClick={() => handleCopy(insight.summary!, `summary-${insight.id}`)}
+                              onClick={() => handleCopy(page.description!, `desc-${page.id}`)}
                             >
-                              {copiedId === `summary-${insight.id}` ? (
+                              {copiedId === `desc-${page.id}` ? (
                                 <Check className="h-4 w-4 text-success" />
                               ) : (
                                 <Copy className="h-4 w-4" />
@@ -170,23 +170,23 @@ export default function CompetitorDetailPage() {
                             </Button>
                           </div>
                           <p className="rounded-lg bg-accent/50 p-4 text-sm text-foreground">
-                            {insight.summary}
+                            {page.description}
                           </p>
                         </div>
                       )}
 
-                      {/* Content */}
-                      {insight.content && (
+                      {/* Markdown Content */}
+                      {page.markdown_content && (
                         <div>
                           <div className="mb-2 flex items-center justify-between">
-                            <h4 className="text-sm font-medium text-foreground">Raw Content</h4>
+                            <h4 className="text-sm font-medium text-foreground">Content</h4>
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-8"
-                              onClick={() => handleCopy(insight.content!, `content-${insight.id}`)}
+                              onClick={() => handleCopy(page.markdown_content!, `content-${page.id}`)}
                             >
-                              {copiedId === `content-${insight.id}` ? (
+                              {copiedId === `content-${page.id}` ? (
                                 <Check className="h-4 w-4 text-success" />
                               ) : (
                                 <Copy className="h-4 w-4" />
@@ -195,13 +195,13 @@ export default function CompetitorDetailPage() {
                           </div>
                           <ScrollArea className="h-48 rounded-lg border border-border bg-muted/50 p-4">
                             <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                              {insight.content}
+                              {page.markdown_content}
                             </p>
                           </ScrollArea>
                         </div>
                       )}
 
-                      {!insight.summary && !insight.content && (
+                      {!page.description && !page.markdown_content && (
                         <p className="text-sm text-muted-foreground">
                           No content available for this page yet.
                         </p>
@@ -218,9 +218,9 @@ export default function CompetitorDetailPage() {
               <div className="rounded-full bg-muted p-4">
                 <FileText className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="mt-4 text-lg font-medium text-foreground">No insights yet</h3>
+              <h3 className="mt-4 text-lg font-medium text-foreground">No pages scraped yet</h3>
               <p className="mt-1 text-center text-sm text-muted-foreground">
-                The n8n workflow will populate insights once it scrapes this competitor.
+                The n8n workflow will populate pages once it scrapes this competitor.
               </p>
             </CardContent>
           </Card>
