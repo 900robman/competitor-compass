@@ -173,15 +173,15 @@ export default function CompetitorListPage() {
                   >
                     <TableCell className="font-medium">{competitor.name}</TableCell>
                     <TableCell>
-                      {competitor.url ? (
+                      {competitor.main_url ? (
                         <a
-                          href={competitor.url.startsWith('http') ? competitor.url : `https://${competitor.url}`}
+                          href={competitor.main_url.startsWith('http') ? competitor.main_url : `https://${competitor.main_url}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
                           className="flex items-center gap-1 text-primary hover:underline"
                         >
-                          {(() => { try { return new URL(competitor.url.startsWith('http') ? competitor.url : `https://${competitor.url}`).hostname; } catch { return competitor.url; } })()}
+                          {(() => { try { return new URL(competitor.main_url.startsWith('http') ? competitor.main_url : `https://${competitor.main_url}`).hostname; } catch { return competitor.main_url; } })()}
                           <ExternalLink className="h-3 w-3" />
                         </a>
                       ) : (

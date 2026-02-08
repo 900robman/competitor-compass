@@ -85,7 +85,7 @@ export async function createCompetitor(
 ): Promise<Competitor> {
   const { data, error } = await supabase
     .from('competitors')
-    .insert({ project_id: projectId, name, url })
+    .insert({ project_id: projectId, name, main_url: url })
     .select()
     .single();
 
@@ -95,7 +95,7 @@ export async function createCompetitor(
 
 export async function updateCompetitor(
   id: string,
-  updates: { name?: string; url?: string; crawl_config?: any; active_crawl_job_id?: string | null }
+  updates: { name?: string; main_url?: string; crawl_config?: any; active_crawl_job_id?: string | null }
 ): Promise<Competitor> {
   const { data, error } = await supabase
     .from('competitors')
