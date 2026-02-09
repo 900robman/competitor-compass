@@ -129,6 +129,20 @@ export async function getCrawlJobs(competitorId: string): Promise<CrawlJob[]> {
   return data ?? [];
 }
 
+export async function getAllCrawlJobs(): Promise<(CrawlJob & { competitor_name?: string })[]> {
+  const { data, error } = await supabase
+    .from('crawl_jobs')
+    .select('*, competitors(name)')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((job: any) => ({
+    ...job,
+    competitor_name: job.competitors?.name ?? 'Unknown',
+    competitors: undefined,
+  }));
+}
+
 export async function getCrawlJob(id: string): Promise<CrawlJob | null> {
   const { data, error } = await supabase
     .from('crawl_jobs')
