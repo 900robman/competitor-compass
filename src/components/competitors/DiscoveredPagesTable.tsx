@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { CategoryBadge } from './CategoryBadge';
 import { ScrapeStatusBadge } from './ScrapeStatusBadge';
+import { PageDetailDrawer } from './PageDetailDrawer';
 import { ExternalLink, FileText, Search } from 'lucide-react';
 
 interface DiscoveredPagesTableProps {
@@ -30,6 +31,7 @@ export function DiscoveredPagesTable({ pages, isLoading }: DiscoveredPagesTableP
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [selectedPage, setSelectedPage] = useState<CompetitorPage | null>(null);
 
   const categories = useMemo(() => {
     const cats = new Set(pages.map((p) => (p.metadata as any)?.category ?? 'Uncategorized'));
@@ -118,17 +120,16 @@ export function DiscoveredPagesTable({ pages, isLoading }: DiscoveredPagesTableP
                 } catch {}
 
                 return (
-                  <TableRow key={page.id}>
+                  <TableRow
+                    key={page.id}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedPage(page)}
+                  >
                     <TableCell>
-                      <a
-                        href={page.url.startsWith('http') ? page.url : `https://${page.url}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-primary hover:underline max-w-[300px] truncate"
-                      >
+                      <span className="flex items-center gap-1 text-primary max-w-[300px] truncate">
                         {hostname}
                         <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                      </a>
+                      </span>
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate text-muted-foreground">
                       {page.title || '—'}
@@ -162,6 +163,15 @@ export function DiscoveredPagesTable({ pages, isLoading }: DiscoveredPagesTableP
           </div>
         </Card>
       )}
+
+      {/* Page Detail Drawer */}
+      <PageDetailDrawer
+        page={selectedPage}
+        open={!!selectedPage}
+        onOpenChange={(open) => {
+          if (!open) setSelectedPage(null);
+        }}
+      />
     </div>
   );
 }
