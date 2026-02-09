@@ -11,6 +11,7 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
+  Activity,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -27,6 +28,7 @@ export function Sidebar({ projectName }: SidebarProps) {
 
   const mainNavItems = [
     { to: '/', icon: LayoutDashboard, label: 'Projects' },
+    { to: '/crawl-jobs', icon: Activity, label: 'Crawl Jobs' },
   ];
 
   const projectNavItems = projectId

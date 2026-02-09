@@ -10,6 +10,7 @@ import ProjectsPage from "./pages/ProjectsPage";
 import CompetitorListPage from "./pages/CompetitorListPage";
 import CompetitorDetailPage from "./pages/CompetitorDetailPage";
 import ChatPage from "./pages/ChatPage";
+import CrawlJobsPage from "./pages/CrawlJobsPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+            <Route path="/crawl-jobs" element={<ProtectedRoute><CrawlJobsPage /></ProtectedRoute>} />
             <Route path="/project/:projectId" element={<ProtectedRoute><CompetitorListPage /></ProtectedRoute>} />
             <Route path="/project/:projectId/competitor/:competitorId" element={<ProtectedRoute><CompetitorDetailPage /></ProtectedRoute>} />
             <Route path="/project/:projectId/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
