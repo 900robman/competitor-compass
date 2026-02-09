@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout, Header } from '@/components/layout';
 import { StatusBadge } from '@/components/competitors/StatusBadge';
 import { CompetitorQuickStats } from '@/components/competitors/CompetitorQuickStats';
+import { CompetitorActions } from '@/components/competitors/CompetitorActions';
 import { DiscoveredPagesTable } from '@/components/competitors/DiscoveredPagesTable';
 import { CrawlHistoryTable } from '@/components/competitors/CrawlHistoryTable';
 import { Button } from '@/components/ui/button';
@@ -83,6 +84,11 @@ export default function CompetitorDetailPage() {
             </p>
           </CardContent>
         </Card>
+
+        {/* Action Buttons */}
+        <div className="mb-6">
+          <CompetitorActions competitor={competitor} pages={pages} />
+        </div>
 
         {/* Quick Stats */}
         <CompetitorQuickStats pages={pages} lastCrawledAt={competitor.last_crawled_at} />
