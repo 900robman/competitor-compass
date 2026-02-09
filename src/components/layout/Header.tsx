@@ -6,6 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { GlobalSearchBar } from './GlobalSearchBar';
 import { LogOut, User } from 'lucide-react';
 
 interface HeaderProps {
@@ -26,6 +27,8 @@ export function Header({ title, subtitle }: HeaderProps) {
         {title && <h1 className="text-xl font-semibold text-foreground">{title}</h1>}
         {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
       </div>
+      <div className="flex items-center gap-3">
+      <GlobalSearchBar />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
@@ -47,6 +50,7 @@ export function Header({ title, subtitle }: HeaderProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
     </header>
   );
 }
