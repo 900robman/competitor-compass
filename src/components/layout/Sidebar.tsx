@@ -13,6 +13,7 @@ import {
   Menu,
   Activity,
   Columns,
+  Search,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -29,6 +30,7 @@ export function Sidebar({ projectName }: SidebarProps) {
 
   const mainNavItems = [
     { to: '/', icon: LayoutDashboard, label: 'Projects' },
+    { to: '/search', icon: Search, label: 'Search' },
     { to: '/crawl-jobs', icon: Activity, label: 'Crawl Jobs' },
   ];
 
