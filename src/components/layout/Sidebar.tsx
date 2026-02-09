@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   Menu,
   Activity,
+  Columns,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -34,6 +35,7 @@ export function Sidebar({ projectName }: SidebarProps) {
   const projectNavItems = projectId
     ? [
         { to: `/project/${projectId}`, icon: Users, label: 'Competitors', end: true },
+        { to: `/project/${projectId}/compare`, icon: Columns, label: 'Compare' },
         { to: `/project/${projectId}/chat`, icon: MessageSquare, label: 'Chat' },
         { to: `/project/${projectId}/settings`, icon: Settings, label: 'Settings' },
       ]

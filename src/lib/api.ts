@@ -166,6 +166,22 @@ export async function getCompetitorPages(competitorId: string): Promise<Competit
   return data ?? [];
 }
 
+// Competitor Pages by project (all competitors)
+export async function getProjectPages(projectId: string): Promise<(CompetitorPage & { competitor_name?: string })[]> {
+  const { data, error } = await supabase
+    .from('competitor_pages')
+    .select('*, competitors!inner(name, project_id)')
+    .eq('competitors.project_id', projectId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((p: any) => ({
+    ...p,
+    competitor_name: p.competitors?.name ?? 'Unknown',
+    competitors: undefined,
+  }));
+}
+
 // Competitor Insights
 export async function getCompetitorInsights(competitorId: string): Promise<CompetitorInsight[]> {
   const { data, error } = await supabase

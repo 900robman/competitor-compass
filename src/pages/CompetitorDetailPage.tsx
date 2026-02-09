@@ -4,6 +4,7 @@ import { StatusBadge } from '@/components/competitors/StatusBadge';
 import { CompetitorQuickStats } from '@/components/competitors/CompetitorQuickStats';
 import { CompetitorActions } from '@/components/competitors/CompetitorActions';
 import { DiscoveredPagesTable } from '@/components/competitors/DiscoveredPagesTable';
+import { BrowseByCategory } from '@/components/competitors/BrowseByCategory';
 import { CrawlHistoryTable } from '@/components/competitors/CrawlHistoryTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -95,6 +96,9 @@ export default function CompetitorDetailPage() {
 
         {/* Discovered Pages */}
         <DiscoveredPagesTable pages={pages} isLoading={pagesLoading} />
+
+        {/* Browse by Category */}
+        <BrowseByCategory pages={pages} />
 
         {/* Crawl History */}
         <CrawlHistoryTable jobs={crawlJobs} isLoading={jobsLoading} />
