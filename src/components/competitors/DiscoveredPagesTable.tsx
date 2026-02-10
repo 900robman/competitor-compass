@@ -38,11 +38,11 @@ import {
   FileText,
   Search,
   ArrowUpDown,
-  FileDown,
   Star,
   Trash2,
   Loader2,
   X,
+  Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -155,30 +155,22 @@ export function DiscoveredPagesTable({ pages, isLoading }: DiscoveredPagesTableP
     });
   }, []);
 
-  // Bulk scrape
-  const handleBulkScrape = async () => {
+  // Bulk mark pending
+  const handleBulkMarkPending = async () => {
     const ids = Array.from(selectedIds);
+    const competitorId = pages[0]?.competitor_id;
     setIsBulkScraping(true);
     try {
-      const competitorId = pages[0]?.competitor_id;
-      const res = await fetch(
-        'https://n8n.offshoot.co.nz/webhook/competitor/scrape-batch',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ competitor_id: competitorId, page_ids: ids }),
-        }
-      );
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
-      toast.success(`Scraping ${ids.length} pages`, {
-        description: 'Content will update once scraping completes.',
-      });
+      const { error } = await supabase
+        .from('competitor_pages')
+        .update({ scrape_status: 'pending' })
+        .in('id', ids);
+      if (error) throw error;
+      toast.success(`Marked ${ids.length} pages as pending`);
       setSelectedIds(new Set());
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['competitorPages', competitorId] });
-      }, 3000);
+      queryClient.invalidateQueries({ queryKey: ['competitorPages', competitorId] });
     } catch (error) {
-      toast.error('Failed to trigger batch scrape', {
+      toast.error('Failed to mark pages as pending', {
         description: error instanceof Error ? error.message : 'Unknown error',
       });
     } finally {
@@ -299,15 +291,15 @@ export function DiscoveredPagesTable({ pages, isLoading }: DiscoveredPagesTableP
               variant="outline"
               size="sm"
               className="h-8"
-              onClick={handleBulkScrape}
+              onClick={handleBulkMarkPending}
               disabled={isBulkScraping}
             >
               {isBulkScraping ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <FileDown className="mr-1.5 h-3.5 w-3.5" />
+                <Clock className="mr-1.5 h-3.5 w-3.5" />
               )}
-              Scrape Selected
+              Mark Pending
             </Button>
             <Button variant="outline" size="sm" className="h-8" disabled>
               <Star className="mr-1.5 h-3.5 w-3.5" />
