@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { CompetitorPage } from '@/types/database';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 type SortField = 'last_scraped_at' | 'url' | 'category' | 'created_at';
 type SortDir = 'asc' | 'desc';
+
+const PREDEFINED_CATEGORIES = [
+  'Homepage', 'Pricing', 'Product', 'Blog', 'Documentation', 'About', 'Contact', 'Uncategorized',
+];
 
 interface DiscoveredPagesTableProps {
   pages: CompetitorPage[];
@@ -399,8 +403,33 @@ export function DiscoveredPagesTable({ pages, isLoading }: DiscoveredPagesTableP
                     <TableCell className="max-w-[200px] truncate text-muted-foreground">
                       {page.title || '—'}
                     </TableCell>
-                    <TableCell>
-                      <CategoryBadge category={category} />
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Select
+                        value={category}
+                        onValueChange={async (newCat) => {
+                          const currentMeta = (page.metadata as any) ?? {};
+                          const { error } = await supabase
+                            .from('competitor_pages')
+                            .update({ metadata: { ...currentMeta, category: newCat } })
+                            .eq('id', page.id);
+                          if (error) {
+                            toast.error('Failed to update category');
+                          } else {
+                            queryClient.invalidateQueries({ queryKey: ['competitorPages', page.competitor_id] });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-7 w-[140px] text-xs border-none bg-transparent hover:bg-accent/50 p-1">
+                          <CategoryBadge category={category} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          {PREDEFINED_CATEGORIES.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              <CategoryBadge category={cat} />
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       <ScrapeStatusBadge status={page.scrape_status} />
