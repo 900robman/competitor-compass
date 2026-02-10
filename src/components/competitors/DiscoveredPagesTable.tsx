@@ -423,8 +423,32 @@ export function DiscoveredPagesTable({ pages, isLoading }: DiscoveredPagesTableP
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell>
-                      <ScrapeStatusBadge status={page.scrape_status} />
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Select
+                        value={page.scrape_status ?? 'not_scraped'}
+                        onValueChange={async (newStatus) => {
+                          const { error } = await supabase
+                            .from('competitor_pages')
+                            .update({ scrape_status: newStatus })
+                            .eq('id', page.id);
+                          if (error) {
+                            toast.error('Failed to update scrape status');
+                          } else {
+                            queryClient.invalidateQueries({ queryKey: ['competitorPages', page.competitor_id] });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-7 w-[130px] text-xs border-none bg-transparent hover:bg-accent/50 p-1">
+                          <ScrapeStatusBadge status={page.scrape_status} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          {['not_scraped', 'pending', 'scraping', 'scraped', 'failed'].map((s) => (
+                            <SelectItem key={s} value={s}>
+                              <ScrapeStatusBadge status={s} />
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                   </TableRow>
                 );
