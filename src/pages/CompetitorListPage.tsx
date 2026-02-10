@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout, Header } from '@/components/layout';
 import { StatusBadge } from '@/components/competitors/StatusBadge';
@@ -51,7 +51,8 @@ export default function CompetitorListPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [competitorToDelete, setCompetitorToDelete] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState('http://');
+  const urlInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleCreateCompetitor = async () => {
     if (!name.trim() || !url.trim()) {
@@ -68,7 +69,7 @@ export default function CompetitorListPage() {
       toast.success('Competitor added successfully');
       setDialogOpen(false);
       setName('');
-      setUrl('');
+      setUrl('http://');
     } catch (error) {
       toast.error('Failed to add competitor');
     }
@@ -128,9 +129,18 @@ export default function CompetitorListPage() {
                   <Label htmlFor="comp-url">Website URL</Label>
                   <Input
                     id="comp-url"
+                    ref={urlInputRef}
                     placeholder="https://example.com"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
+                    onFocus={() => {
+                      setTimeout(() => {
+                        if (urlInputRef.current) {
+                          const len = urlInputRef.current.value.length;
+                          urlInputRef.current.setSelectionRange(len, len);
+                        }
+                      }, 0);
+                    }}
                   />
                 </div>
               </div>
