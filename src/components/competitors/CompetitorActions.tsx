@@ -14,6 +14,7 @@ import {
 import { Loader2, Map, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CompetitorActionsProps {
   competitor: Competitor;
@@ -46,16 +47,16 @@ export function CompetitorActions({ competitor, pages }: CompetitorActionsProps)
         old_record: {},
       };
 
-      const res = await fetch(
-        'https://n8n.offshoot.co.nz/webhook/competitor/map?max_urls=100',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('n8n-proxy', {
+        body: {
+          action: 'map',
+          payload,
+          query_params: { max_urls: '100' },
+        },
+      });
 
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      if (error) throw new Error(error.message);
+      if (!data?.success) throw new Error(data?.error || 'Unknown error');
 
       toast.success('Site mapping triggered', {
         description: 'Pages will appear shortly as the crawl completes.',
@@ -85,16 +86,15 @@ export function CompetitorActions({ competitor, pages }: CompetitorActionsProps)
         page_ids: pendingPages.map((p) => p.id),
       };
 
-      const res = await fetch(
-        'https://n8n.offshoot.co.nz/webhook/competitor/scrape-batch',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('n8n-proxy', {
+        body: {
+          action: 'scrape-batch',
+          payload,
+        },
+      });
 
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      if (error) throw new Error(error.message);
+      if (!data?.success) throw new Error(data?.error || 'Unknown error');
 
       toast.success(`Scraping ${pendingPages.length} pages`, {
         description: 'Content will be available once scraping completes.',
