@@ -115,6 +115,7 @@ export interface Database {
           markdown_content: string | null
           html_content: string | null
           metadata: Json | null
+          category: string | null
           last_scraped_at: string | null
           scrape_status: string | null
           crawl_job_id: string | null
@@ -130,6 +131,7 @@ export interface Database {
           markdown_content?: string | null
           html_content?: string | null
           metadata?: Json | null
+          category?: string | null
           last_scraped_at?: string | null
           scrape_status?: string | null
           crawl_job_id?: string | null
@@ -145,6 +147,7 @@ export interface Database {
           markdown_content?: string | null
           html_content?: string | null
           metadata?: Json | null
+          category?: string | null
           last_scraped_at?: string | null
           scrape_status?: string | null
           crawl_job_id?: string | null
