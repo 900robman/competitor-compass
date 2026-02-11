@@ -200,9 +200,13 @@ export async function getProjectStats(): Promise<{ totalProjects: number; totalC
     .from('projects')
     .select('*', { count: 'exact', head: true });
 
-  const { count: competitorCount } = await supabase
+  const { data: allCompetitors } = await supabase
     .from('competitors')
-    .select('*', { count: 'exact', head: true });
+    .select('id, crawl_config');
+  const competitorCount = (allCompetitors ?? []).filter((c) => {
+    const config = c.crawl_config as any;
+    return config?.is_project_site !== true;
+  }).length;
 
   const { count: pendingCrawls } = await supabase
     .from('crawl_jobs')
@@ -211,17 +215,21 @@ export async function getProjectStats(): Promise<{ totalProjects: number; totalC
 
   return {
     totalProjects: projectCount ?? 0,
-    totalCompetitors: competitorCount ?? 0,
+    totalCompetitors: competitorCount,
     pendingCrawls: pendingCrawls ?? 0,
   };
 }
 
 export async function getCompetitorCount(projectId: string): Promise<number> {
-  const { count, error } = await supabase
+  const { data, error } = await supabase
     .from('competitors')
-    .select('*', { count: 'exact', head: true })
+    .select('id, crawl_config')
     .eq('project_id', projectId);
 
   if (error) throw error;
-  return count ?? 0;
+  const count = (data ?? []).filter((c) => {
+    const config = c.crawl_config as any;
+    return config?.is_project_site !== true;
+  }).length;
+  return count;
 }
