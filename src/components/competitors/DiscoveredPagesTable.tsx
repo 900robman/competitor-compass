@@ -47,13 +47,10 @@ import {
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { usePageCategories } from '@/hooks/usePageCategories';
 
 type SortField = 'last_scraped_at' | 'url' | 'category' | 'created_at';
 type SortDir = 'asc' | 'desc';
-
-const PREDEFINED_CATEGORIES = [
-  'Homepage', 'Pricing', 'Product', 'Blog', 'Documentation', 'About', 'Contact', 'Uncategorized',
-];
 
 interface DiscoveredPagesTableProps {
   pages: CompetitorPage[];
@@ -66,6 +63,7 @@ function getCategory(page: CompetitorPage): string {
 
 export function DiscoveredPagesTable({ pages, isLoading }: DiscoveredPagesTableProps) {
   const queryClient = useQueryClient();
+  const { data: dbCategories = [] } = usePageCategories();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
@@ -412,14 +410,17 @@ export function DiscoveredPagesTable({ pages, isLoading }: DiscoveredPagesTableP
                         }}
                       >
                         <SelectTrigger className="h-7 w-[140px] text-xs border-none bg-transparent hover:bg-accent/50 p-1">
-                          <CategoryBadge category={category} />
+                          <CategoryBadge category={category} color={dbCategories.find(c => c.name === category)?.color} />
                         </SelectTrigger>
                         <SelectContent className="bg-popover z-50">
-                          {PREDEFINED_CATEGORIES.map((cat) => (
-                            <SelectItem key={cat} value={cat}>
-                              <CategoryBadge category={cat} />
+                          {dbCategories.filter(c => c.is_active).map((cat) => (
+                            <SelectItem key={cat.name} value={cat.name}>
+                              <CategoryBadge category={cat.name} color={cat.color} />
                             </SelectItem>
                           ))}
+                          <SelectItem value="Uncategorized">
+                            <CategoryBadge category="Uncategorized" />
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>

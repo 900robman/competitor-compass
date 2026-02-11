@@ -14,6 +14,7 @@ import CrawlJobsPage from "./pages/CrawlJobsPage";
 import CompareCategoriesPage from "./pages/CompareCategoriesPage";
 import SearchPage from "./pages/SearchPage";
 import SettingsPage from "./pages/SettingsPage";
+import PageCategoriesPage from "./pages/PageCategoriesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/project/:projectId/compare" element={<ProtectedRoute><CompareCategoriesPage /></ProtectedRoute>} />
             <Route path="/project/:projectId/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
             <Route path="/project/:projectId/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/project/:projectId/categories" element={<ProtectedRoute><PageCategoriesPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
