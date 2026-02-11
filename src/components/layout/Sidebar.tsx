@@ -14,6 +14,7 @@ import {
   Activity,
   Columns,
   Search,
+  Tags,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -39,6 +40,7 @@ export function Sidebar({ projectName }: SidebarProps) {
         { to: `/project/${projectId}`, icon: Users, label: 'Competitors', end: true },
         { to: `/project/${projectId}/compare`, icon: Columns, label: 'Compare' },
         { to: `/project/${projectId}/chat`, icon: MessageSquare, label: 'Chat' },
+        { to: `/project/${projectId}/categories`, icon: Tags, label: 'Categories' },
         { to: `/project/${projectId}/settings`, icon: Settings, label: 'Settings' },
       ]
     : [];

@@ -12,13 +12,26 @@ const categoryColors: Record<string, string> = {
 
 interface CategoryBadgeProps {
   category: string;
+  color?: string | null;
   className?: string;
 }
 
-export function CategoryBadge({ category, className }: CategoryBadgeProps) {
-  const color = categoryColors[category] ?? 'bg-muted text-muted-foreground';
+export function CategoryBadge({ category, color, className }: CategoryBadgeProps) {
+  const fallbackClass = categoryColors[category] ?? 'bg-muted text-muted-foreground';
+
+  const style = color
+    ? { backgroundColor: `${color}20`, color }
+    : undefined;
+
   return (
-    <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', color, className)}>
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+        !color && fallbackClass,
+        className,
+      )}
+      style={style}
+    >
       {category}
     </span>
   );
