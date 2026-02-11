@@ -36,8 +36,8 @@ export function useCreateProject() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: ({ name, description }: { name: string; description: string }) =>
-      createProject(name, description, user!.id),
+    mutationFn: ({ name, description, website }: { name: string; description: string; website?: string }) =>
+      createProject(name, description, user!.id, website),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['projectStats'] });
@@ -49,7 +49,7 @@ export function useUpdateProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: { name?: string; description?: string } }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: { name?: string; description?: string; website?: string | null } }) =>
       updateProject(id, updates),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });

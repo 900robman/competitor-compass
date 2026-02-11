@@ -21,7 +21,7 @@ export function CompetitorQuickStats({ pages, lastCrawledAt }: CompetitorQuickSt
   const pendingCount = scrapeStatusCounts['pending'] ?? 0;
 
   const categoryCounts = pages.reduce<Record<string, number>>((acc, p) => {
-    const cat = (p.metadata as any)?.category ?? 'Uncategorized';
+    const cat = p.category ?? (p.metadata as any)?.category ?? 'Uncategorized';
     acc[cat] = (acc[cat] ?? 0) + 1;
     return acc;
   }, {});
