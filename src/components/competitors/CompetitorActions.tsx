@@ -50,7 +50,7 @@ export function CompetitorActions({ competitor, pages }: CompetitorActionsProps)
 
       const { data, error } = await supabase.functions.invoke('n8n-proxy', {
         body: {
-          action: 'map',
+          action: 'map_site',
           payload,
           query_params: { max_urls: '100' },
         },

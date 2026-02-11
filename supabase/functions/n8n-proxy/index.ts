@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     const { action, payload, query_params } = await req.json();
 
     // Validate action
-    const allowedActions = ['map', 'scrape-batch'];
+    const allowedActions = ['map_site', 'scrape-batch'];
     if (!allowedActions.includes(action)) {
       return new Response(
         JSON.stringify({ success: false, error: `Invalid action: ${action}` }),
