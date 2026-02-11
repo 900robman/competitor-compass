@@ -58,7 +58,7 @@ interface DiscoveredPagesTableProps {
 }
 
 function getCategory(page: CompetitorPage): string {
-  return (page.metadata as any)?.category ?? 'Uncategorized';
+  return page.category ?? (page.metadata as any)?.category ?? 'Uncategorized';
 }
 
 export function DiscoveredPagesTable({ pages, isLoading }: DiscoveredPagesTableProps) {
@@ -397,10 +397,9 @@ export function DiscoveredPagesTable({ pages, isLoading }: DiscoveredPagesTableP
                       <Select
                         value={category}
                         onValueChange={async (newCat) => {
-                          const currentMeta = (page.metadata as any) ?? {};
                           const { error } = await supabase
                             .from('competitor_pages')
-                            .update({ metadata: { ...currentMeta, category: newCat } })
+                            .update({ category: newCat === 'Uncategorized' ? null : newCat })
                             .eq('id', page.id);
                           if (error) {
                             toast.error('Failed to update category');
