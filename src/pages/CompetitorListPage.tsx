@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout, Header } from '@/components/layout';
 import { StatusBadge } from '@/components/competitors/StatusBadge';
@@ -33,11 +33,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useProject } from '@/hooks/useProjects';
+import { useProject, useUpdateProject } from '@/hooks/useProjects';
 import { useCompetitors, useCreateCompetitor, useDeleteCompetitor } from '@/hooks/useCompetitors';
 import { toast } from 'sonner';
-import { Plus, Loader2, ExternalLink, Trash2, Globe } from 'lucide-react';
+import { Plus, Loader2, ExternalLink, Trash2, Globe, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Competitor } from '@/types/database';
+
+function isProjectSiteCompetitor(competitor: Competitor): boolean {
+  const config = competitor.crawl_config as any;
+  return config?.is_project_site === true;
+}
 
 export default function CompetitorListPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -46,6 +52,7 @@ export default function CompetitorListPage() {
   const { data: competitors, isLoading } = useCompetitors(projectId!);
   const createCompetitor = useCreateCompetitor();
   const deleteCompetitor = useDeleteCompetitor();
+  const updateProject = useUpdateProject();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -53,6 +60,38 @@ export default function CompetitorListPage() {
   const [name, setName] = useState('');
   const [url, setUrl] = useState('http://');
   const urlInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Website editing state
+  const [editingWebsite, setEditingWebsite] = useState(false);
+  const [websiteValue, setWebsiteValue] = useState('');
+  const websiteInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Separate project site competitor from regular competitors
+  const projectSiteCompetitor = competitors?.find(isProjectSiteCompetitor) ?? null;
+  const regularCompetitors = competitors?.filter((c) => !isProjectSiteCompetitor(c)) ?? [];
+
+  // Auto-create self-competitor when project has website but no self-competitor exists
+  useEffect(() => {
+    if (!project?.website || !competitors || projectSiteCompetitor) return;
+
+    createCompetitor.mutate(
+      {
+        projectId: projectId!,
+        name: `${project.name} (Your Site)`,
+        url: project.website,
+      },
+      {
+        onSuccess: async (created) => {
+          // Flag it as project site
+          const { supabase } = await import('@/integrations/supabase/client');
+          await supabase
+            .from('competitors')
+            .update({ crawl_config: { is_project_site: true } })
+            .eq('id', created.id);
+        },
+      }
+    );
+  }, [project?.website, competitors, projectSiteCompetitor]);
 
   const handleCreateCompetitor = async () => {
     if (!name.trim() || !url.trim()) {
@@ -88,6 +127,19 @@ export default function CompetitorListPage() {
     }
   };
 
+  const handleSaveWebsite = async () => {
+    try {
+      await updateProject.mutateAsync({
+        id: projectId!,
+        updates: { website: websiteValue.trim() || null },
+      });
+      toast.success('Website updated');
+      setEditingWebsite(false);
+    } catch (error) {
+      toast.error('Failed to update website');
+    }
+  };
+
   return (
     <DashboardLayout projectName={project?.name}>
       <Header
@@ -96,10 +148,91 @@ export default function CompetitorListPage() {
       />
 
       <div className="p-6">
-        {/* Header */}
+        {/* Project Website Section */}
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardContent className="flex items-center gap-4 py-4">
+            <div className="rounded-lg bg-primary/10 p-2">
+              <Building2 className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">Your Website</p>
+              {editingWebsite ? (
+                <div className="mt-1 flex items-center gap-2">
+                  <Input
+                    ref={websiteInputRef}
+                    className="h-8 max-w-xs text-sm"
+                    value={websiteValue}
+                    onChange={(e) => setWebsiteValue(e.target.value)}
+                    placeholder="https://yoursite.com"
+                    onFocus={() => {
+                      setTimeout(() => {
+                        if (websiteInputRef.current) {
+                          const len = websiteInputRef.current.value.length;
+                          websiteInputRef.current.setSelectionRange(len, len);
+                        }
+                      }, 0);
+                    }}
+                  />
+                  <Button size="sm" variant="default" onClick={handleSaveWebsite} disabled={updateProject.isPending}>
+                    Save
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingWebsite(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              ) : project?.website ? (
+                <div className="flex items-center gap-2">
+                  <a
+                    href={project.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {project.website}
+                    <ExternalLink className="ml-1 inline h-3 w-3" />
+                  </a>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 text-xs text-muted-foreground"
+                    onClick={() => {
+                      setWebsiteValue(project.website ?? '');
+                      setEditingWebsite(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="link"
+                  className="h-auto p-0 text-sm text-muted-foreground"
+                  onClick={() => {
+                    setWebsiteValue('http://');
+                    setEditingWebsite(true);
+                  }}
+                >
+                  + Add your website URL to map &amp; scrape your own pages
+                </Button>
+              )}
+            </div>
+            {projectSiteCompetitor && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate(`/project/${projectId}/competitor/${projectSiteCompetitor.id}`)}
+              >
+                View Pages
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Competitors Header */}
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-foreground">
-            {competitors?.length ?? 0} Competitor{(competitors?.length ?? 0) !== 1 ? 's' : ''}
+            {regularCompetitors.length} Competitor{regularCompetitors.length !== 1 ? 's' : ''}
           </h2>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
@@ -162,7 +295,7 @@ export default function CompetitorListPage() {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : competitors && competitors.length > 0 ? (
+        ) : regularCompetitors.length > 0 ? (
           <Card className="border-border/50">
             <Table>
               <TableHeader>
@@ -175,7 +308,7 @@ export default function CompetitorListPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {competitors.map((competitor) => (
+                {regularCompetitors.map((competitor) => (
                   <TableRow
                     key={competitor.id}
                     className="cursor-pointer"

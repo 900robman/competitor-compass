@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout, Header } from '@/components/layout';
 import { StatsCard } from '@/components/dashboard/StatsCard';
@@ -63,6 +63,8 @@ export default function ProjectsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [website, setWebsite] = useState('http://');
+  const websiteInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleCreateProject = async () => {
     if (!name.trim()) {
@@ -71,11 +73,12 @@ export default function ProjectsPage() {
     }
 
     try {
-      const project = await createProject.mutateAsync({ name: name.trim(), description: description.trim() });
+      const project = await createProject.mutateAsync({ name: name.trim(), description: description.trim(), website: website.trim() === 'http://' ? undefined : website.trim() });
       toast.success('Project created successfully');
       setDialogOpen(false);
       setName('');
       setDescription('');
+      setWebsite('http://');
       navigate(`/project/${project.id}`);
     } catch (error) {
       toast.error('Failed to create project');
@@ -141,6 +144,24 @@ export default function ProjectsPage() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website URL (optional)</Label>
+                  <Input
+                    id="website"
+                    ref={websiteInputRef}
+                    placeholder="https://yoursite.com"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    onFocus={() => {
+                      setTimeout(() => {
+                        if (websiteInputRef.current) {
+                          const len = websiteInputRef.current.value.length;
+                          websiteInputRef.current.setSelectionRange(len, len);
+                        }
+                      }, 0);
+                    }}
                   />
                 </div>
               </div>

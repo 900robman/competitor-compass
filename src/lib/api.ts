@@ -23,10 +23,10 @@ export async function getProject(id: string): Promise<Project | null> {
   return data;
 }
 
-export async function createProject(name: string, description: string, userId: string): Promise<Project> {
+export async function createProject(name: string, description: string, userId: string, website?: string): Promise<Project> {
   const { data, error } = await supabase
     .from('projects')
-    .insert({ name, description, user_id: userId })
+    .insert({ name, description, user_id: userId, website: website || null })
     .select()
     .single();
 
@@ -34,7 +34,7 @@ export async function createProject(name: string, description: string, userId: s
   return data;
 }
 
-export async function updateProject(id: string, updates: { name?: string; description?: string }): Promise<Project> {
+export async function updateProject(id: string, updates: { name?: string; description?: string; website?: string | null }): Promise<Project> {
   const { data, error } = await supabase
     .from('projects')
     .update(updates)
