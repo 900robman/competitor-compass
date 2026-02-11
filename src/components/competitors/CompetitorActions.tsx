@@ -28,6 +28,7 @@ export function CompetitorActions({ competitor, pages }: CompetitorActionsProps)
   const [isMapping, setIsMapping] = useState(false);
   const [isScraping, setIsScraping] = useState(false);
 
+  const hasBeenMapped = pages.length > 0 || !!competitor.last_crawled_at;
   const pendingPages = pages.filter((p) => p.scrape_status === 'pending');
 
   const handleReMap = async () => {
@@ -126,7 +127,7 @@ export function CompetitorActions({ competitor, pages }: CompetitorActionsProps)
           ) : (
             <Map className="mr-2 h-4 w-4" />
           )}
-          Re-map Site
+          {hasBeenMapped ? 'Re-map Site' : 'Map Site'}
         </Button>
 
         <Button
@@ -151,7 +152,7 @@ export function CompetitorActions({ competitor, pages }: CompetitorActionsProps)
       <AlertDialog open={mapDialogOpen} onOpenChange={setMapDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Re-map Site?</AlertDialogTitle>
+            <AlertDialogTitle>{hasBeenMapped ? 'Re-map' : 'Map'} Site?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <span className="block">
                 This will trigger a Firecrawl map of <strong>{competitor.main_url}</strong> to
