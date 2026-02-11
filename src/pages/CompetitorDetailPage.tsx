@@ -76,20 +76,16 @@ export default function CompetitorDetailPage() {
               <StatusBadge status={competitor.last_crawled_at ? 'Active' : 'Pending'} />
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Last crawled:{' '}
               {competitor.last_crawled_at
                 ? format(new Date(competitor.last_crawled_at), "MMMM d, yyyy 'at' HH:mm")
                 : 'Never'}
             </p>
+            <CompetitorActions competitor={competitor} pages={pages} />
           </CardContent>
         </Card>
-
-        {/* Action Buttons */}
-        <div className="mb-6">
-          <CompetitorActions competitor={competitor} pages={pages} />
-        </div>
 
         {/* Quick Stats */}
         <CompetitorQuickStats pages={pages} lastCrawledAt={competitor.last_crawled_at} />
