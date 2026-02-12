@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout';
 import { useProject } from '@/hooks/useProjects';
 import { cn } from '@/lib/utils';
@@ -21,7 +21,20 @@ const tabs: { id: SettingsTab; label: string; icon: typeof Settings }[] = [
 export default function SettingsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { data: project } = useProject(projectId!);
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as SettingsTab | null;
+  const [activeTab, setActiveTab] = useState<SettingsTab>(tabParam || 'general');
+
+  const handleTabChange = (tab: SettingsTab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
+
+  useEffect(() => {
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   return (
     <DashboardLayout projectName={project?.name}>
@@ -36,7 +49,7 @@ export default function SettingsPage() {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={cn(
                     'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                     activeTab === tab.id
