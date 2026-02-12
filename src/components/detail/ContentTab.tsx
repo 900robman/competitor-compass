@@ -28,6 +28,24 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { usePageCategories } from '@/hooks/usePageCategories';
+import { Download, Tag } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+
+function extractTitleFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const path = urlObj.pathname;
+    if (path === '/' || path === '') return 'Homepage';
+    const segments = path.split('/').filter(Boolean);
+    const lastSegment = segments[segments.length - 1];
+    return lastSegment
+      .replace(/[-_]/g, ' ')
+      .replace(/\.(html|htm|php|asp|aspx)$/i, '')
+      .replace(/\b\w/g, l => l.toUpperCase());
+  } catch {
+    return 'Untitled Page';
+  }
+}
 
 interface ContentTabProps {
   pages: CompetitorPage[];
@@ -39,6 +57,7 @@ function getCategory(page: CompetitorPage): string {
 }
 
 export function ContentTab({ pages, isLoading }: ContentTabProps) {
+  const { projectId } = useParams<{ projectId: string }>();
   const queryClient = useQueryClient();
   const { data: dbCategories = [] } = usePageCategories();
   const [search, setSearch] = useState('');
@@ -46,6 +65,34 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedPage, setSelectedPage] = useState<CompetitorPage | null>(null);
   const [isBulkPending, setIsBulkPending] = useState(false);
+  const [isScraping, setIsScraping] = useState(false);
+
+  const pendingPages = useMemo(() => {
+    return pages.filter(p => p.scrape_status === 'pending');
+  }, [pages]);
+
+  const handleScrapePending = async () => {
+    const competitorId = pages[0]?.competitor_id;
+    if (!competitorId || pendingPages.length === 0) return;
+    setIsScraping(true);
+    try {
+      const response = await fetch('https://n8n.offshoot.co.nz/webhook/competitor/scrape-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ competitor_id: competitorId })
+      });
+      if (!response.ok) throw new Error('Failed to trigger scrape');
+      toast.success(`Triggered scraping for ${pendingPages.length} pending pages`);
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['competitorPages', competitorId] });
+      }, 2000);
+    } catch (error) {
+      toast.error('Failed to trigger scraping');
+      console.error('Scrape error:', error);
+    } finally {
+      setIsScraping(false);
+    }
+  };
 
   // Derive categories with counts
   const categoryCounts = useMemo(() => {
@@ -129,6 +176,17 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
           </SelectContent>
         </Select>
 
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            window.location.href = `/project/${projectId}/settings?tab=categories`;
+          }}
+        >
+          <Tag className="mr-1.5 h-3.5 w-3.5" />
+          Edit Categories
+        </Button>
+
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -157,6 +215,29 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
               <Clock className="mr-1.5 h-3.5 w-3.5" />
             )}
             Mark as Pending
+          </Button>
+        </div>
+      )}
+
+      {/* Scrape Pending button */}
+      {pendingPages.length > 0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2">
+          <span className="text-sm font-medium">
+            {pendingPages.length} pending page{pendingPages.length !== 1 ? 's' : ''} ready to scrape
+          </span>
+          <Button
+            variant="default"
+            size="sm"
+            className="ml-auto h-8"
+            onClick={handleScrapePending}
+            disabled={isScraping}
+          >
+            {isScraping ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            Scrape Pending Pages
           </Button>
         </div>
       )}
@@ -202,7 +283,7 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
                     <TableCell>
                       <div>
                         <p className="text-sm font-medium text-foreground truncate max-w-[300px]">
-                          {page.title || 'Untitled'}
+                          {page.title || extractTitleFromUrl(page.url)}
                         </p>
                         <p className="text-xs text-muted-foreground truncate max-w-[300px]">
                           {displayPath}

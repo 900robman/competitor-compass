@@ -18,7 +18,14 @@ import { useProject } from '@/hooks/useProjects';
 import { useCompetitors, useCreateCompetitor, useDeleteCompetitor } from '@/hooks/useCompetitors';
 import { toast } from 'sonner';
 import { Plus, Loader2, Globe, Search } from 'lucide-react';
-import { Competitor, CompanyType } from '@/types/database';
+import { Competitor, CompanyType, MonitoringPriority } from '@/types/database';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { CompanyTypeSelect } from '@/components/competitors/CompanyTypeSelect';
 import { YourWebsiteCard } from '@/components/workspace/YourWebsiteCard';
 import { WorkspaceStatsCards } from '@/components/workspace/WorkspaceStatsCards';
@@ -43,6 +50,8 @@ export default function ProjectWorkspacePage() {
   const [competitorToDelete, setCompetitorToDelete] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<CompanyType | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'pending'>('all');
+  const [filterPriority, setFilterPriority] = useState<'all' | 'high' | 'medium' | 'low'>('all');
 
   // Separate project site from regular competitors
   const projectSiteCompetitor = competitors?.find(isProjectSiteCompetitor) ?? null;
@@ -57,6 +66,16 @@ export default function ProjectWorkspacePage() {
     if (filterType !== 'all') {
       result = result.filter((c) => c.company_type === filterType);
     }
+    if (filterStatus !== 'all') {
+      result = result.filter((c) => {
+        if (filterStatus === 'active') return !!c.last_crawled_at;
+        if (filterStatus === 'pending') return !c.last_crawled_at;
+        return true;
+      });
+    }
+    if (filterPriority !== 'all') {
+      result = result.filter((c) => c.monitoring_priority === filterPriority);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -66,7 +85,7 @@ export default function ProjectWorkspacePage() {
       );
     }
     return result;
-  }, [regularCompetitors, filterType, searchQuery]);
+  }, [regularCompetitors, filterType, filterStatus, filterPriority, searchQuery]);
 
   // Auto-create self-competitor when project has website but no self-competitor exists
   useEffect(() => {
@@ -183,8 +202,29 @@ export default function ProjectWorkspacePage() {
                   value={filterType}
                   onValueChange={(v) => setFilterType(v as CompanyType | 'all')}
                   includeAll
-                  className="w-[200px]"
+                  className="w-[180px]"
                 />
+                <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={filterPriority} onValueChange={(v) => setFilterPriority(v as any)}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="All Priority" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="all">All Priority</SelectItem>
+                    <SelectItem value="high">High Priority</SelectItem>
+                    <SelectItem value="medium">Medium Priority</SelectItem>
+                    <SelectItem value="low">Low Priority</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Table */}
@@ -207,7 +247,7 @@ export default function ProjectWorkspacePage() {
                 <Card className="border-dashed">
                   <CardContent className="flex flex-col items-center justify-center py-12">
                     <p className="text-sm text-muted-foreground">No companies match your filters.</p>
-                    <Button variant="link" className="mt-2" onClick={() => { setFilterType('all'); setSearchQuery(''); }}>
+                    <Button variant="link" className="mt-2" onClick={() => { setFilterType('all'); setFilterStatus('all'); setFilterPriority('all'); setSearchQuery(''); }}>
                       Clear filters
                     </Button>
                   </CardContent>

@@ -19,12 +19,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProject } from '@/hooks/useProjects';
 import { useCompetitor, useCompetitorPages, useCrawlJobs, useUpdateCompetitor } from '@/hooks/useCompetitors';
 import { ArrowLeft, ExternalLink, Loader2, Pencil, Check, X } from 'lucide-react';
-import { CompanyType, MonitoringPriority } from '@/types/database';
+import { CompanyType, MonitoringPriority, Competitor } from '@/types/database';
 import { toast } from 'sonner';
 import { OverviewTab } from '@/components/detail/OverviewTab';
 import { ContentTab } from '@/components/detail/ContentTab';
 import { HistoryTab } from '@/components/detail/HistoryTab';
 import { InsightsTab } from '@/components/detail/InsightsTab';
+
+function isProjectSiteCompetitor(competitor: Competitor): boolean {
+  const config = competitor.crawl_config as any;
+  return config?.is_project_site === true;
+}
 
 export default function CompetitorDetailPage() {
   const { projectId, competitorId } = useParams<{ projectId: string; competitorId: string }>();
@@ -119,7 +124,7 @@ export default function CompetitorDetailPage() {
               {competitor.main_url}
               <ExternalLink className="h-3 w-3" />
             </a>
-            {!editing && (
+            {!editing && !isProjectSiteCompetitor(competitor) && (
               <div className="flex items-center gap-2 pt-1">
                 <CompanyTypeBadge type={competitor.company_type} />
                 <PriorityBadge priority={competitor.monitoring_priority} />
@@ -177,13 +182,17 @@ export default function CompetitorDetailPage() {
         )}
 
         {/* Tabs */}
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs defaultValue="content" className="w-full">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
             <TabsTrigger value="insights">Insights</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="content" className="mt-6">
+            <ContentTab pages={pages} isLoading={pagesLoading} />
+          </TabsContent>
 
           <TabsContent value="overview" className="mt-6">
             <OverviewTab
@@ -191,10 +200,6 @@ export default function CompetitorDetailPage() {
               crawlJobs={crawlJobs}
               lastCrawledAt={competitor.last_crawled_at}
             />
-          </TabsContent>
-
-          <TabsContent value="content" className="mt-6">
-            <ContentTab pages={pages} isLoading={pagesLoading} />
           </TabsContent>
 
           <TabsContent value="history" className="mt-6">
