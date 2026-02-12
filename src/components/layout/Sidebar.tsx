@@ -5,16 +5,13 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   LayoutDashboard,
-  Users,
-  MessageSquare,
   Settings,
   LogOut,
   ChevronLeft,
   Menu,
-  Activity,
   Columns,
-  Search,
-  Tags,
+  FolderOpen,
+  User,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -29,21 +26,16 @@ export function Sidebar({ projectName }: SidebarProps) {
 
   const isInProject = !!projectId;
 
-  const mainNavItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Projects' },
-    { to: '/search', icon: Search, label: 'Search' },
-    { to: '/crawl-jobs', icon: Activity, label: 'Crawl Jobs' },
+  const navItems = [
+    { to: '/', icon: LayoutDashboard, label: 'Projects', end: true, always: true },
+    ...(isInProject
+      ? [
+          { to: `/project/${projectId}`, icon: FolderOpen, label: 'Workspace', end: true, always: false },
+          { to: `/project/${projectId}/compare`, icon: Columns, label: 'Compare', end: false, always: false },
+          { to: `/project/${projectId}/settings`, icon: Settings, label: 'Settings', end: false, always: false },
+        ]
+      : []),
   ];
-
-  const projectNavItems = projectId
-    ? [
-        { to: `/project/${projectId}`, icon: Users, label: 'Tracked Companies', end: true },
-        { to: `/project/${projectId}/compare`, icon: Columns, label: 'Compare' },
-        { to: `/project/${projectId}/chat`, icon: MessageSquare, label: 'Chat' },
-        { to: `/project/${projectId}/categories`, icon: Tags, label: 'Categories' },
-        { to: `/project/${projectId}/settings`, icon: Settings, label: 'Settings' },
-      ]
-    : [];
 
   return (
     <aside
@@ -56,7 +48,7 @@ export function Sidebar({ projectName }: SidebarProps) {
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
         {!collapsed && (
           <span className="text-lg font-semibold text-sidebar-foreground">
-            {isInProject && projectName ? projectName : 'CompetitorIQ'}
+            CompetitorIQ
           </span>
         )}
         <Button
@@ -72,11 +64,11 @@ export function Sidebar({ projectName }: SidebarProps) {
       {/* Navigation */}
       <ScrollArea className="flex-1 px-2 py-4">
         <nav className="space-y-1">
-          {mainNavItems.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
-              end
+              end={item.end}
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
@@ -90,35 +82,22 @@ export function Sidebar({ projectName }: SidebarProps) {
               {!collapsed && <span>{item.label}</span>}
             </NavLink>
           ))}
-
-          {isInProject && (
-            <>
-              <div className="my-4 border-t border-sidebar-border" />
-              {projectNavItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                        : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
-                    )
-                  }
-                >
-                  <item.icon className="h-5 w-5 shrink-0" />
-                  {!collapsed && <span>{item.label}</span>}
-                </NavLink>
-              ))}
-            </>
-          )}
         </nav>
       </ScrollArea>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border p-2">
+      <div className="border-t border-sidebar-border p-2 space-y-1">
+        <Button
+          variant="ghost"
+          className={cn(
+            'w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent/50',
+            collapsed && 'justify-center px-2'
+          )}
+          disabled
+        >
+          <User className="h-5 w-5 shrink-0" />
+          {!collapsed && <span>Profile</span>}
+        </Button>
         <Button
           variant="ghost"
           onClick={signOut}
