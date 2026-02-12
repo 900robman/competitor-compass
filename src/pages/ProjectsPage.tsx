@@ -37,7 +37,7 @@ function ProjectCard({ project }: { project: { id: string; name: string; descrip
             <FolderOpen className="h-5 w-5 text-primary" />
           </div>
           <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
-            {competitorCount} competitor{competitorCount !== 1 ? 's' : ''}
+            {competitorCount} tracked compan{competitorCount !== 1 ? 'ies' : 'y'}
           </span>
         </div>
         <CardTitle className="mt-3 text-lg">{project.name}</CardTitle>
@@ -63,7 +63,7 @@ export default function ProjectsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [website, setWebsite] = useState('http://');
+  const [website, setWebsite] = useState('https://');
   const websiteInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleCreateProject = async () => {
@@ -73,12 +73,12 @@ export default function ProjectsPage() {
     }
 
     try {
-      const project = await createProject.mutateAsync({ name: name.trim(), description: description.trim(), website: website.trim() === 'http://' ? undefined : website.trim() });
+      const project = await createProject.mutateAsync({ name: name.trim(), description: description.trim(), website: website.trim() === 'https://' ? undefined : website.trim() });
       toast.success('Project created successfully');
       setDialogOpen(false);
       setName('');
       setDescription('');
-      setWebsite('http://');
+      setWebsite('https://');
       navigate(`/project/${project.id}`);
     } catch (error) {
       toast.error('Failed to create project');
@@ -98,7 +98,7 @@ export default function ProjectsPage() {
             icon={<FolderOpen className="h-5 w-5" />}
           />
           <StatsCard
-            title="Total Competitors"
+            title="Tracked Companies"
             value={stats?.totalCompetitors ?? 0}
             icon={<Users className="h-5 w-5" />}
           />
@@ -123,7 +123,7 @@ export default function ProjectsPage() {
               <DialogHeader>
                 <DialogTitle>Create New Project</DialogTitle>
                 <DialogDescription>
-                  Add a new project to organize your competitor tracking.
+                  Add a new project to organize your company tracking.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -197,7 +197,7 @@ export default function ProjectsPage() {
               </div>
               <h3 className="mt-4 text-lg font-medium text-foreground">No projects yet</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Create your first project to start tracking competitors.
+                Create your first project to start tracking companies.
               </p>
               <Button className="mt-4" onClick={() => setDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />

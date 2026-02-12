@@ -37,7 +37,7 @@ export function Sidebar({ projectName }: SidebarProps) {
 
   const projectNavItems = projectId
     ? [
-        { to: `/project/${projectId}`, icon: Users, label: 'Competitors', end: true },
+        { to: `/project/${projectId}`, icon: Users, label: 'Tracked Companies', end: true },
         { to: `/project/${projectId}/compare`, icon: Columns, label: 'Compare' },
         { to: `/project/${projectId}/chat`, icon: MessageSquare, label: 'Chat' },
         { to: `/project/${projectId}/categories`, icon: Tags, label: 'Categories' },

@@ -15,7 +15,7 @@ export default function ChatPage() {
 
   return (
     <DashboardLayout projectName={project?.name}>
-      <Header title="Chat with Project Data" subtitle="Ask questions about your competitor insights" />
+      <Header title="Chat with Project Data" subtitle="Ask questions about your tracked company insights" />
       <div className="flex h-[calc(100vh-4rem)] flex-col p-6">
         <ScrollArea className="flex-1 rounded-lg border border-border bg-card p-4">
           <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -24,13 +24,13 @@ export default function ChatPage() {
             </div>
             <h3 className="mt-4 text-lg font-medium">Chat with your data</h3>
             <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              This feature will let you ask questions about your collected competitor data using AI. The RAG backend will be connected soon.
+              This feature will let you ask questions about your collected company data using AI. The RAG backend will be connected soon.
             </p>
           </div>
         </ScrollArea>
         <div className="mt-4 flex gap-2">
           <Input
-            placeholder="Ask questions about your competitor data..."
+            placeholder="Ask questions about your tracked company data..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             disabled

@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout, Header } from '@/components/layout';
 import { StatusBadge } from '@/components/competitors/StatusBadge';
+import { CompanyTypeBadge } from '@/components/competitors/CompanyTypeBadge';
+import { PriorityBadge } from '@/components/competitors/PriorityBadge';
 import { CompetitorQuickStats } from '@/components/competitors/CompetitorQuickStats';
 import { CompetitorActions } from '@/components/competitors/CompetitorActions';
 import { DiscoveredPagesTable } from '@/components/competitors/DiscoveredPagesTable';
@@ -8,10 +11,21 @@ import { BrowseByCategory } from '@/components/competitors/BrowseByCategory';
 import { CrawlHistoryTable } from '@/components/competitors/CrawlHistoryTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useProject } from '@/hooks/useProjects';
-import { useCompetitor, useCompetitorPages, useCrawlJobs } from '@/hooks/useCompetitors';
-import { ArrowLeft, ExternalLink, Loader2 } from 'lucide-react';
+import { useCompetitor, useCompetitorPages, useCrawlJobs, useUpdateCompetitor } from '@/hooks/useCompetitors';
+import { ArrowLeft, ExternalLink, Loader2, Pencil, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { CompanyType, MonitoringPriority } from '@/types/database';
+import { toast } from 'sonner';
 
 export default function CompetitorDetailPage() {
   const { projectId, competitorId } = useParams<{ projectId: string; competitorId: string }>();
@@ -20,6 +34,39 @@ export default function CompetitorDetailPage() {
   const { data: competitor, isLoading: competitorLoading } = useCompetitor(competitorId!);
   const { data: pages = [], isLoading: pagesLoading } = useCompetitorPages(competitorId!);
   const { data: crawlJobs = [], isLoading: jobsLoading } = useCrawlJobs(competitorId!);
+  const updateCompetitor = useUpdateCompetitor();
+
+  const [editing, setEditing] = useState(false);
+  const [editType, setEditType] = useState<CompanyType>('direct_competitor');
+  const [editPriority, setEditPriority] = useState<MonitoringPriority>('medium');
+  const [editNotes, setEditNotes] = useState('');
+
+  const startEditing = () => {
+    if (!competitor) return;
+    setEditType(competitor.company_type ?? 'direct_competitor');
+    setEditPriority(competitor.monitoring_priority ?? 'medium');
+    setEditNotes(competitor.relationship_notes ?? '');
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    if (!competitor) return;
+    try {
+      await updateCompetitor.mutateAsync({
+        id: competitor.id,
+        projectId: competitor.project_id,
+        updates: {
+          company_type: editType,
+          monitoring_priority: editPriority,
+          relationship_notes: editNotes.trim() || null,
+        },
+      });
+      toast.success('Company details updated');
+      setEditing(false);
+    } catch {
+      toast.error('Failed to update');
+    }
+  };
 
   if (competitorLoading) {
     return (
@@ -35,9 +82,9 @@ export default function CompetitorDetailPage() {
     return (
       <DashboardLayout projectName={project?.name}>
         <div className="flex h-full flex-col items-center justify-center">
-          <p className="text-muted-foreground">Competitor not found</p>
+          <p className="text-muted-foreground">Company not found</p>
           <Button variant="outline" className="mt-4" onClick={() => navigate(`/project/${projectId}`)}>
-            Back to Competitors
+            Back to Tracked Companies
           </Button>
         </div>
       </DashboardLayout>
@@ -46,16 +93,16 @@ export default function CompetitorDetailPage() {
 
   return (
     <DashboardLayout projectName={project?.name}>
-      <Header title={competitor.name} subtitle="Competitor insights and scraped data" />
+      <Header title={competitor.name} subtitle="Company insights and scraped data" />
 
       <div className="p-6">
         {/* Back Button */}
         <Button variant="ghost" className="mb-6 -ml-2" onClick={() => navigate(`/project/${projectId}`)}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Competitors
+          Back to Tracked Companies
         </Button>
 
-        {/* Competitor Info Card */}
+        {/* Company Info Card */}
         <Card className="mb-6 border-border/50">
           <CardHeader>
             <div className="flex items-start justify-between">
@@ -73,10 +120,78 @@ export default function CompetitorDetailPage() {
                   </a>
                 </CardDescription>
               </div>
-              <StatusBadge status={competitor.last_crawled_at ? 'Active' : 'Pending'} />
+              <div className="flex items-center gap-2">
+                <StatusBadge status={competitor.last_crawled_at ? 'Active' : 'Pending'} />
+                {!editing && (
+                  <Button variant="ghost" size="sm" onClick={startEditing}>
+                    <Pencil className="mr-1 h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {editing ? (
+              <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Company Type</Label>
+                    <Select value={editType} onValueChange={(v) => setEditType(v as CompanyType)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="direct_competitor">Direct Competitor</SelectItem>
+                        <SelectItem value="indirect_competitor">Indirect Competitor</SelectItem>
+                        <SelectItem value="geographic_competitor">Geographic</SelectItem>
+                        <SelectItem value="aspirational">Aspirational</SelectItem>
+                        <SelectItem value="market_leader">Market Leader</SelectItem>
+                        <SelectItem value="emerging_threat">Emerging Threat</SelectItem>
+                        <SelectItem value="partner">Partner</SelectItem>
+                        <SelectItem value="customer">Customer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Monitoring Priority</Label>
+                    <Select value={editPriority} onValueChange={(v) => setEditPriority(v as MonitoringPriority)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">High Priority</SelectItem>
+                        <SelectItem value="medium">Medium Priority</SelectItem>
+                        <SelectItem value="low">Low Priority</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <Textarea
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    placeholder="Notes about this company..."
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleSave} disabled={updateCompetitor.isPending}>
+                    {updateCompetitor.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1 h-3.5 w-3.5" />}
+                    Save
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <CompanyTypeBadge type={competitor.company_type} />
+                <PriorityBadge priority={competitor.monitoring_priority} />
+                {competitor.relationship_notes && (
+                  <p className="w-full text-sm text-muted-foreground mt-1">{competitor.relationship_notes}</p>
+                )}
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
               Last crawled:{' '}
               {competitor.last_crawled_at

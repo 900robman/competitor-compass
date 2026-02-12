@@ -89,7 +89,7 @@ export default function CompareCategoriesPage() {
     <DashboardLayout projectName={project?.name}>
       <Header
         title="Compare by Category"
-        subtitle={`Side-by-side comparison across ${competitors.length} competitors`}
+        subtitle={`Side-by-side comparison across ${competitors.length} tracked companies`}
       />
 
       <div className="p-6">
@@ -146,7 +146,7 @@ export default function CompareCategoriesPage() {
               {/* Competitor filter */}
               <div>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Competitors
+                  Companies
                 </h3>
                 <div className="space-y-1">
                   {competitors.map((c) => (
@@ -181,7 +181,7 @@ export default function CompareCategoriesPage() {
                   <CategoryBadge category={activeCategory} />
                   <span className="text-sm text-muted-foreground">
                     {filteredPages.length} page{filteredPages.length !== 1 ? 's' : ''} across{' '}
-                    {groupedByCompetitor.length} competitor{groupedByCompetitor.length !== 1 ? 's' : ''}
+                    {groupedByCompetitor.length} compan{groupedByCompetitor.length !== 1 ? 'ies' : 'y'}
                   </span>
                 </div>
               )}

@@ -223,7 +223,7 @@ export default function CrawlJobsPage() {
               <SelectValue placeholder="Competitor" />
             </SelectTrigger>
             <SelectContent className="bg-popover z-50">
-              <SelectItem value="all">All Competitors</SelectItem>
+              <SelectItem value="all">All Companies</SelectItem>
               {competitors.map(([id, name]) => (
                 <SelectItem key={id} value={id}>{name}</SelectItem>
               ))}
@@ -308,7 +308,7 @@ export default function CrawlJobsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Type</TableHead>
-                  <TableHead>Competitor</TableHead>
+                  <TableHead>Company</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Progress</TableHead>
                   <TableHead>Started</TableHead>
