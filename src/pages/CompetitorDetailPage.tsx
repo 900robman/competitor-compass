@@ -1,17 +1,11 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { DashboardLayout, Header } from '@/components/layout';
+import { DashboardLayout } from '@/components/layout';
 import { StatusBadge } from '@/components/competitors/StatusBadge';
 import { CompanyTypeBadge } from '@/components/competitors/CompanyTypeBadge';
 import { CompanyTypeSelect } from '@/components/competitors/CompanyTypeSelect';
 import { PriorityBadge } from '@/components/competitors/PriorityBadge';
-import { CompetitorQuickStats } from '@/components/competitors/CompetitorQuickStats';
-import { CompetitorActions } from '@/components/competitors/CompetitorActions';
-import { DiscoveredPagesTable } from '@/components/competitors/DiscoveredPagesTable';
-import { BrowseByCategory } from '@/components/competitors/BrowseByCategory';
-import { CrawlHistoryTable } from '@/components/competitors/CrawlHistoryTable';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -21,12 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProject } from '@/hooks/useProjects';
 import { useCompetitor, useCompetitorPages, useCrawlJobs, useUpdateCompetitor } from '@/hooks/useCompetitors';
 import { ArrowLeft, ExternalLink, Loader2, Pencil, Check, X } from 'lucide-react';
-import { format } from 'date-fns';
 import { CompanyType, MonitoringPriority } from '@/types/database';
 import { toast } from 'sonner';
+import { OverviewTab } from '@/components/detail/OverviewTab';
+import { ContentTab } from '@/components/detail/ContentTab';
+import { HistoryTab } from '@/components/detail/HistoryTab';
+import { InsightsTab } from '@/components/detail/InsightsTab';
 
 export default function CompetitorDetailPage() {
   const { projectId, competitorId } = useParams<{ projectId: string; competitorId: string }>();
@@ -94,114 +92,119 @@ export default function CompetitorDetailPage() {
 
   return (
     <DashboardLayout projectName={project?.name}>
-      <Header title={competitor.name} subtitle="Company insights and scraped data" />
-
       <div className="p-6">
         {/* Back Button */}
-        <Button variant="ghost" className="mb-6 -ml-2" onClick={() => navigate(`/project/${projectId}`)}>
+        <Button
+          variant="ghost"
+          className="mb-4 -ml-2 text-muted-foreground"
+          onClick={() => navigate(`/project/${projectId}`)}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Tracked Companies
         </Button>
 
-        {/* Company Info Card */}
-        <Card className="mb-6 border-border/50">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-xl">{competitor.name}</CardTitle>
-                <CardDescription className="mt-1">
-                  <a
-                    href={competitor.main_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-primary hover:underline"
-                  >
-                    {competitor.main_url}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <StatusBadge status={competitor.last_crawled_at ? 'Active' : 'Pending'} />
-                {!editing && (
-                  <Button variant="ghost" size="sm" onClick={startEditing}>
-                    <Pencil className="mr-1 h-3.5 w-3.5" />
-                    Edit
-                  </Button>
-                )}
-              </div>
+        {/* Header */}
+        <div className="mb-6 flex items-start justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold text-foreground">{competitor.name}</h1>
+              <StatusBadge status={competitor.last_crawled_at ? 'Active' : 'Pending'} />
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {editing ? (
-              <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Company Type</Label>
-                    <CompanyTypeSelect value={editType} onValueChange={(v) => setEditType(v as CompanyType)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Monitoring Priority</Label>
-                    <Select value={editPriority} onValueChange={(v) => setEditPriority(v as MonitoringPriority)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="high">High Priority</SelectItem>
-                        <SelectItem value="medium">Medium Priority</SelectItem>
-                        <SelectItem value="low">Low Priority</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Notes</Label>
-                  <Textarea
-                    value={editNotes}
-                    onChange={(e) => setEditNotes(e.target.value)}
-                    placeholder="Notes about this company..."
-                    rows={3}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={handleSave} disabled={updateCompetitor.isPending}>
-                    {updateCompetitor.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1 h-3.5 w-3.5" />}
-                    Save
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-                    <X className="mr-1 h-3.5 w-3.5" />
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={competitor.main_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              {competitor.main_url}
+              <ExternalLink className="h-3 w-3" />
+            </a>
+            {!editing && (
+              <div className="flex items-center gap-2 pt-1">
                 <CompanyTypeBadge type={competitor.company_type} />
                 <PriorityBadge priority={competitor.monitoring_priority} />
-                {competitor.relationship_notes && (
-                  <p className="w-full text-sm text-muted-foreground mt-1">{competitor.relationship_notes}</p>
-                )}
               </div>
             )}
-            <p className="text-sm text-muted-foreground">
-              Last crawled:{' '}
-              {competitor.last_crawled_at
-                ? format(new Date(competitor.last_crawled_at), "MMMM d, yyyy 'at' HH:mm")
-                : 'Never'}
-            </p>
-            <CompetitorActions competitor={competitor} pages={pages} />
-          </CardContent>
-        </Card>
+          </div>
+          {!editing && (
+            <Button variant="outline" size="sm" onClick={startEditing}>
+              <Pencil className="mr-1.5 h-3.5 w-3.5" />
+              Edit Company
+            </Button>
+          )}
+        </div>
 
-        {/* Quick Stats */}
-        <CompetitorQuickStats pages={pages} lastCrawledAt={competitor.last_crawled_at} />
+        {/* Inline edit form */}
+        {editing && (
+          <div className="mb-6 space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Company Type</Label>
+                <CompanyTypeSelect value={editType} onValueChange={(v) => setEditType(v as CompanyType)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Monitoring Priority</Label>
+                <Select value={editPriority} onValueChange={(v) => setEditPriority(v as MonitoringPriority)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="high">High Priority</SelectItem>
+                    <SelectItem value="medium">Medium Priority</SelectItem>
+                    <SelectItem value="low">Low Priority</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Notes about this company..."
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSave} disabled={updateCompetitor.isPending}>
+                {updateCompetitor.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1 h-3.5 w-3.5" />}
+                Save
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+                <X className="mr-1 h-3.5 w-3.5" />
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
 
-        {/* Discovered Pages */}
-        <DiscoveredPagesTable pages={pages} isLoading={pagesLoading} />
+        {/* Tabs */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+            <TabsTrigger value="insights">Insights</TabsTrigger>
+          </TabsList>
 
-        {/* Browse by Category */}
-        <BrowseByCategory pages={pages} />
+          <TabsContent value="overview" className="mt-6">
+            <OverviewTab
+              pages={pages}
+              crawlJobs={crawlJobs}
+              lastCrawledAt={competitor.last_crawled_at}
+            />
+          </TabsContent>
 
-        {/* Crawl History */}
-        <CrawlHistoryTable jobs={crawlJobs} isLoading={jobsLoading} />
+          <TabsContent value="content" className="mt-6">
+            <ContentTab pages={pages} isLoading={pagesLoading} />
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-6">
+            <HistoryTab jobs={crawlJobs} isLoading={jobsLoading} />
+          </TabsContent>
+
+          <TabsContent value="insights" className="mt-6">
+            <InsightsTab competitorName={competitor.name} />
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
