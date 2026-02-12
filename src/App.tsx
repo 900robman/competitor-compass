@@ -7,7 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import AuthPage from "./pages/AuthPage";
 import ProjectsPage from "./pages/ProjectsPage";
-import CompetitorListPage from "./pages/CompetitorListPage";
+import ProjectWorkspacePage from "./pages/ProjectWorkspacePage";
 import CompetitorDetailPage from "./pages/CompetitorDetailPage";
 import CompareCategoriesPage from "./pages/CompareCategoriesPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -25,7 +25,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
-            <Route path="/project/:projectId" element={<ProtectedRoute><CompetitorListPage /></ProtectedRoute>} />
+            <Route path="/project/:projectId" element={<ProtectedRoute><ProjectWorkspacePage /></ProtectedRoute>} />
             <Route path="/project/:projectId/competitor/:competitorId" element={<ProtectedRoute><CompetitorDetailPage /></ProtectedRoute>} />
             <Route path="/project/:projectId/compare" element={<ProtectedRoute><CompareCategoriesPage /></ProtectedRoute>} />
             <Route path="/project/:projectId/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
