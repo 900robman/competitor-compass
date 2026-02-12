@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { usePageCategories } from '@/hooks/usePageCategories';
-import { Download, Tag } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 
 function extractTitleFromUrl(url: string): string {
@@ -64,12 +64,21 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedPage, setSelectedPage] = useState<CompetitorPage | null>(null);
+  const [scrapeStatusFilter, setScrapeStatusFilter] = useState('all');
   const [isBulkPending, setIsBulkPending] = useState(false);
   const [isScraping, setIsScraping] = useState(false);
 
   const pendingPages = useMemo(() => {
     return pages.filter(p => p.scrape_status === 'pending');
   }, [pages]);
+
+  // Determine if selection is locked to pending or non-pending
+  const selectionMode = useMemo<'none' | 'pending' | 'non-pending'>(() => {
+    if (selectedIds.size === 0) return 'none';
+    const firstSelected = pages.find(p => selectedIds.has(p.id));
+    if (!firstSelected) return 'none';
+    return firstSelected.scrape_status === 'pending' ? 'pending' : 'non-pending';
+  }, [selectedIds, pages]);
 
   const handleScrapePending = async () => {
     const competitorId = pages[0]?.competitor_id;
@@ -94,6 +103,16 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
     }
   };
 
+  // Derive scrape status counts
+  const scrapeStatusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    pages.forEach((p) => {
+      const status = p.scrape_status ?? 'unknown';
+      counts[status] = (counts[status] ?? 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  }, [pages]);
+
   // Derive categories with counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -113,9 +132,10 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
         p.url.toLowerCase().includes(q) ||
         (p.title ?? '').toLowerCase().includes(q);
       const matchesCat = categoryFilter === 'all' || getCategory(p) === categoryFilter;
-      return matchesSearch && matchesCat;
+      const matchesScrape = scrapeStatusFilter === 'all' || (p.scrape_status ?? 'unknown') === scrapeStatusFilter;
+      return matchesSearch && matchesCat && matchesScrape;
     });
-  }, [pages, search, categoryFilter]);
+  }, [pages, search, categoryFilter, scrapeStatusFilter]);
 
   const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id));
 
@@ -164,10 +184,10 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
       <div className="flex items-center gap-3">
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="h-9 w-[220px] text-sm">
-            <SelectValue placeholder="Category: All" />
+            <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent className="bg-popover z-50">
-            <SelectItem value="all">All ({pages.length})</SelectItem>
+            <SelectItem value="all">All Categories ({pages.length})</SelectItem>
             {categoryCounts.map(([cat, count]) => (
               <SelectItem key={cat} value={cat}>
                 {cat} ({count})
@@ -176,18 +196,21 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
           </SelectContent>
         </Select>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            window.location.href = `/project/${projectId}/settings?tab=categories`;
-          }}
-        >
-          <Tag className="mr-1.5 h-3.5 w-3.5" />
-          Edit Categories
-        </Button>
+        <Select value={scrapeStatusFilter} onValueChange={setScrapeStatusFilter}>
+          <SelectTrigger className="h-9 w-[180px] text-sm">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover z-50">
+            <SelectItem value="all">All Statuses ({pages.length})</SelectItem>
+            {scrapeStatusCounts.map(([status, count]) => (
+              <SelectItem key={status} value={status}>
+                {status.charAt(0).toUpperCase() + status.slice(1)} ({count})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <div className="relative flex-1 max-w-xs">
+        <div className="relative flex-1 max-w-xs ml-auto">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search pages..."
@@ -230,7 +253,7 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
             size="sm"
             className="ml-auto h-8"
             onClick={handleScrapePending}
-            disabled={isScraping}
+            disabled={isScraping || selectedIds.size > 0}
           >
             {isScraping ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -278,7 +301,15 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
                     onClick={() => setSelectedPage(page)}
                   >
                     <TableCell onClick={(e) => { e.stopPropagation(); toggleOne(page.id); }}>
-                      <Checkbox checked={selectedIds.has(page.id)} className="h-3.5 w-3.5" />
+                      <Checkbox
+                        checked={selectedIds.has(page.id)}
+                        disabled={
+                          selectionMode === 'pending' ? page.scrape_status !== 'pending' :
+                          selectionMode === 'non-pending' ? page.scrape_status === 'pending' :
+                          false
+                        }
+                        className="h-3.5 w-3.5"
+                      />
                     </TableCell>
                     <TableCell>
                       <div>
