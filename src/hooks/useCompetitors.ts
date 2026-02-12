@@ -10,6 +10,7 @@ import {
   getCompetitorCount,
   getCrawlJobs,
 } from '@/lib/api';
+import { CompanyType, MonitoringPriority } from '@/types/database';
 
 export function useCompetitors(projectId: string) {
   return useQuery({
@@ -67,11 +68,19 @@ export function useCreateCompetitor() {
       projectId,
       name,
       url,
+      companyType,
+      priority,
+      notes,
+      tags,
     }: {
       projectId: string;
       name: string;
       url: string;
-    }) => createCompetitor(projectId, name, url),
+      companyType?: CompanyType;
+      priority?: MonitoringPriority;
+      notes?: string;
+      tags?: string[];
+    }) => createCompetitor(projectId, name, url, companyType, priority, notes, tags),
     onSuccess: (_, { projectId }) => {
       queryClient.invalidateQueries({ queryKey: ['competitors', projectId] });
       queryClient.invalidateQueries({ queryKey: ['competitorCount', projectId] });
@@ -90,7 +99,17 @@ export function useUpdateCompetitor() {
     }: {
       id: string;
       projectId: string;
-      updates: { name?: string; main_url?: string; crawl_config?: any; active_crawl_job_id?: string | null };
+      updates: {
+        name?: string;
+        main_url?: string;
+        crawl_config?: any;
+        active_crawl_job_id?: string | null;
+        company_type?: CompanyType | null;
+        tags?: string[] | null;
+        monitoring_priority?: MonitoringPriority | null;
+        relationship_notes?: string | null;
+        is_active?: boolean | null;
+      };
     }) => updateCompetitor(id, updates),
     onSuccess: (_, { id, projectId }) => {
       queryClient.invalidateQueries({ queryKey: ['competitors', projectId] });

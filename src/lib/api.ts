@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Project, Competitor, CrawlJob, CompetitorPage, CompetitorInsight } from '@/types/database';
+import { Project, Competitor, CrawlJob, CompetitorPage, CompetitorInsight, CompanyType, MonitoringPriority } from '@/types/database';
 
 // Projects
 export async function getProjects(): Promise<Project[]> {
@@ -81,11 +81,24 @@ export async function getCompetitor(id: string): Promise<Competitor | null> {
 export async function createCompetitor(
   projectId: string,
   name: string,
-  url: string
+  url: string,
+  companyType?: CompanyType,
+  priority?: MonitoringPriority,
+  notes?: string,
+  tags?: string[]
 ): Promise<Competitor> {
   const { data, error } = await supabase
     .from('competitors')
-    .insert({ project_id: projectId, name, main_url: url })
+    .insert({
+      project_id: projectId,
+      name,
+      main_url: url,
+      company_type: companyType || 'direct_competitor',
+      monitoring_priority: priority || 'medium',
+      relationship_notes: notes || null,
+      tags: tags || [],
+      is_active: true,
+    })
     .select()
     .single();
 
@@ -95,7 +108,17 @@ export async function createCompetitor(
 
 export async function updateCompetitor(
   id: string,
-  updates: { name?: string; main_url?: string; crawl_config?: any; active_crawl_job_id?: string | null }
+  updates: {
+    name?: string;
+    main_url?: string;
+    crawl_config?: any;
+    active_crawl_job_id?: string | null;
+    company_type?: CompanyType | null;
+    tags?: string[] | null;
+    monitoring_priority?: MonitoringPriority | null;
+    relationship_notes?: string | null;
+    is_active?: boolean | null;
+  }
 ): Promise<Competitor> {
   const { data, error } = await supabase
     .from('competitors')
