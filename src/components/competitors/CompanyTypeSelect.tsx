@@ -5,19 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useActiveCompanyTypes } from '@/hooks/useCompanyTypes';
-
-// Hardcoded fallback types
-const FALLBACK_TYPES = [
-  { value: 'direct_competitor', label: 'Direct Competitor' },
-  { value: 'indirect_competitor', label: 'Indirect Competitor' },
-  { value: 'geographic_competitor', label: 'Geographic' },
-  { value: 'aspirational', label: 'Aspirational' },
-  { value: 'market_leader', label: 'Market Leader' },
-  { value: 'emerging_threat', label: 'Emerging Threat' },
-  { value: 'partner', label: 'Partner' },
-  { value: 'customer', label: 'Customer' },
-];
+import { useCompanyTypes } from '@/hooks/useCompanyTypes';
 
 interface CompanyTypeSelectProps {
   value: string;
@@ -27,10 +15,7 @@ interface CompanyTypeSelectProps {
 }
 
 export function CompanyTypeSelect({ value, onValueChange, includeAll = false, className }: CompanyTypeSelectProps) {
-  const { data: dbTypes = [] } = useActiveCompanyTypes();
-  const types = dbTypes.length > 0
-    ? dbTypes.map((t) => ({ value: t.value, label: t.label }))
-    : FALLBACK_TYPES;
+  const types = useCompanyTypes();
 
   return (
     <Select value={value} onValueChange={onValueChange}>
