@@ -42,11 +42,12 @@ export function OverviewTab({ pages, crawlJobs, lastCrawledAt }: OverviewTabProp
     const events: ActivityEvent[] = [];
 
     crawlJobs.slice(0, 10).forEach((job) => {
-      const statusLabel = job.status === 'completed' ? 'completed successfully' : job.status === 'failed' ? 'failed' : job.status;
+      const jobType = job.job_type ?? 'crawl';
+      const statusLabel = job.status === 'completed' ? 'completed successfully' : job.status === 'failed' ? 'failed' : (job.status ?? 'unknown');
       events.push({
         id: `job-${job.id}`,
         type: 'crawl',
-        description: `${job.job_type.charAt(0).toUpperCase() + job.job_type.slice(1)} ${statusLabel}`,
+        description: `${jobType.charAt(0).toUpperCase() + jobType.slice(1)} ${statusLabel}`,
         timestamp: job.completed_at ?? job.started_at,
       });
     });
