@@ -74,7 +74,7 @@ export default function CompetitorListPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [competitorToDelete, setCompetitorToDelete] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const [url, setUrl] = useState('http://');
+  const [url, setUrl] = useState('https://');
   const [companyType, setCompanyType] = useState<CompanyType>('direct_competitor');
   const [priority, setPriority] = useState<MonitoringPriority>('medium');
   const [notes, setNotes] = useState('');
@@ -132,15 +132,15 @@ export default function CompetitorListPage() {
         priority,
         notes: notes.trim() || undefined,
       });
-      toast.success('Competitor added successfully');
+      toast.success('Company added successfully');
       setDialogOpen(false);
       setName('');
-      setUrl('http://');
+      setUrl('https://');
       setCompanyType('direct_competitor');
       setPriority('medium');
       setNotes('');
     } catch (error) {
-      toast.error('Failed to add competitor');
+      toast.error('Failed to add company');
     }
   };
 
@@ -149,11 +149,11 @@ export default function CompetitorListPage() {
 
     try {
       await deleteCompetitor.mutateAsync({ id: competitorToDelete, projectId: projectId! });
-      toast.success('Competitor deleted');
+      toast.success('Company deleted');
       setDeleteDialogOpen(false);
       setCompetitorToDelete(null);
     } catch (error) {
-      toast.error('Failed to delete competitor');
+      toast.error('Failed to delete company');
     }
   };
 
@@ -173,8 +173,8 @@ export default function CompetitorListPage() {
   return (
     <DashboardLayout projectName={project?.name}>
       <Header
-        title="Competitors"
-        subtitle={project ? `Tracking competitors for ${project.name}` : undefined}
+        title="Tracked Companies"
+        subtitle={project ? `Tracking companies for ${project.name}` : undefined}
       />
 
       <div className="p-6">
@@ -239,7 +239,7 @@ export default function CompetitorListPage() {
                   variant="link"
                   className="h-auto p-0 text-sm text-muted-foreground"
                   onClick={() => {
-                    setWebsiteValue('http://');
+                    setWebsiteValue('https://');
                     setEditingWebsite(true);
                   }}
                 >
@@ -262,25 +262,25 @@ export default function CompetitorListPage() {
         {/* Competitors Header */}
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-foreground">
-            {regularCompetitors.length} Competitor{regularCompetitors.length !== 1 ? 's' : ''}
+            {regularCompetitors.length} Tracked Compan{regularCompetitors.length !== 1 ? 'ies' : 'y'}
           </h2>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                Add Competitor
+                Add Company
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
-                <DialogTitle>Add Competitor</DialogTitle>
+                <DialogTitle>Add Tracked Company</DialogTitle>
                 <DialogDescription>
-                  Add a new competitor to track. The n8n workflow will scrape their website.
+                  Add a new company to track. The n8n workflow will scrape their website.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="comp-name">Competitor Name</Label>
+                  <Label htmlFor="comp-name">Company Name</Label>
                   <Input
                     id="comp-name"
                     placeholder="e.g., Acme Corp"
@@ -355,7 +355,7 @@ export default function CompetitorListPage() {
                 </Button>
                 <Button onClick={handleCreateCompetitor} disabled={createCompetitor.isPending}>
                   {createCompetitor.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Add Competitor
+                  Add Company
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -477,7 +477,7 @@ export default function CompetitorListPage() {
         ) : regularCompetitors.length > 0 && filterType !== 'all' ? (
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-sm text-muted-foreground">No competitors match this filter.</p>
+              <p className="text-sm text-muted-foreground">No companies match this filter.</p>
               <Button variant="link" className="mt-2" onClick={() => setFilterType('all')}>
                 Clear filter
               </Button>
@@ -489,13 +489,13 @@ export default function CompetitorListPage() {
               <div className="rounded-full bg-muted p-4">
                 <Globe className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="mt-4 text-lg font-medium text-foreground">No competitors yet</h3>
+              <h3 className="mt-4 text-lg font-medium text-foreground">No tracked companies yet</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Add your first competitor to start tracking.
+                Add your first company to start tracking.
               </p>
               <Button className="mt-4" onClick={() => setDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Add Competitor
+                Add Company
               </Button>
             </CardContent>
           </Card>
@@ -506,9 +506,9 @@ export default function CompetitorListPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Competitor?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Tracked Company?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this competitor and all associated insights. This action
+              This will permanently delete this company and all associated insights. This action
               cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

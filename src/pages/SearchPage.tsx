@@ -138,7 +138,7 @@ export default function SearchPage() {
 
   return (
     <DashboardLayout>
-      <Header title="Search" subtitle="Search across all scraped competitor content" />
+      <Header title="Search" subtitle="Search across all scraped company content" />
 
       <div className="p-6">
         {/* Search Bar */}
@@ -186,7 +186,7 @@ export default function SearchPage() {
 
                 <div>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Competitors
+                   Companies
                   </h3>
                   <ScrollArea className="max-h-[200px]">
                     <div className="space-y-1">
@@ -328,7 +328,7 @@ export default function SearchPage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <Search className="mb-2 h-8 w-8" />
-                <p className="text-sm">Enter a search term to find content across all competitors</p>
+                <p className="text-sm">Enter a search term to find content across all tracked companies</p>
               </div>
             )}
           </div>
