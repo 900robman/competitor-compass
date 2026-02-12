@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout, Header } from '@/components/layout';
 import { StatusBadge } from '@/components/competitors/StatusBadge';
 import { CompanyTypeBadge } from '@/components/competitors/CompanyTypeBadge';
+import { CompanyTypeSelect } from '@/components/competitors/CompanyTypeSelect';
 import { PriorityBadge } from '@/components/competitors/PriorityBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -309,21 +310,7 @@ export default function CompetitorListPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Company Type</Label>
-                    <Select value={companyType} onValueChange={(v) => setCompanyType(v as CompanyType)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="direct_competitor">Direct Competitor</SelectItem>
-                        <SelectItem value="indirect_competitor">Indirect Competitor</SelectItem>
-                        <SelectItem value="geographic_competitor">Geographic</SelectItem>
-                        <SelectItem value="aspirational">Aspirational</SelectItem>
-                        <SelectItem value="market_leader">Market Leader</SelectItem>
-                        <SelectItem value="emerging_threat">Emerging Threat</SelectItem>
-                        <SelectItem value="partner">Partner</SelectItem>
-                        <SelectItem value="customer">Customer</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <CompanyTypeSelect value={companyType} onValueChange={(v) => setCompanyType(v as CompanyType)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Monitoring Priority</Label>
@@ -364,22 +351,12 @@ export default function CompetitorListPage() {
 
         {/* Filter */}
         <div className="mb-4 flex items-center gap-4">
-          <Select value={filterType} onValueChange={(v) => setFilterType(v as CompanyType | 'all')}>
-            <SelectTrigger className="w-[240px]">
-              <SelectValue placeholder="Filter by type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Company Types</SelectItem>
-              <SelectItem value="direct_competitor">Direct Competitors</SelectItem>
-              <SelectItem value="indirect_competitor">Indirect Competitors</SelectItem>
-              <SelectItem value="geographic_competitor">Geographic</SelectItem>
-              <SelectItem value="aspirational">Aspirational</SelectItem>
-              <SelectItem value="market_leader">Market Leaders</SelectItem>
-              <SelectItem value="emerging_threat">Emerging Threats</SelectItem>
-              <SelectItem value="partner">Partners</SelectItem>
-              <SelectItem value="customer">Customers</SelectItem>
-            </SelectContent>
-          </Select>
+          <CompanyTypeSelect
+            value={filterType}
+            onValueChange={(v) => setFilterType(v as CompanyType | 'all')}
+            includeAll
+            className="w-[240px]"
+          />
         </div>
 
         {/* Competitors Table */}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout, Header } from '@/components/layout';
 import { useProject, useUpdateProject, useDeleteProject } from '@/hooks/useProjects';
+import { CompanyTypesManager } from '@/components/settings/CompanyTypesManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,6 +52,9 @@ export default function SettingsPage() {
             <Button onClick={handleSave} disabled={updateProject.isPending}>{updateProject.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Changes</Button>
           </CardContent>
         </Card>
+
+        {/* Company Types Management */}
+        <CompanyTypesManager />
 
         <Card className="opacity-60">
           <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" />Notifications<span className="rounded bg-muted px-2 py-0.5 text-xs">Coming Soon</span></CardTitle></CardHeader>

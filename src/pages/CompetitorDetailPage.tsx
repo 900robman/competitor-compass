@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout, Header } from '@/components/layout';
 import { StatusBadge } from '@/components/competitors/StatusBadge';
 import { CompanyTypeBadge } from '@/components/competitors/CompanyTypeBadge';
+import { CompanyTypeSelect } from '@/components/competitors/CompanyTypeSelect';
 import { PriorityBadge } from '@/components/competitors/PriorityBadge';
 import { CompetitorQuickStats } from '@/components/competitors/CompetitorQuickStats';
 import { CompetitorActions } from '@/components/competitors/CompetitorActions';
@@ -137,19 +138,7 @@ export default function CompetitorDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Company Type</Label>
-                    <Select value={editType} onValueChange={(v) => setEditType(v as CompanyType)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="direct_competitor">Direct Competitor</SelectItem>
-                        <SelectItem value="indirect_competitor">Indirect Competitor</SelectItem>
-                        <SelectItem value="geographic_competitor">Geographic</SelectItem>
-                        <SelectItem value="aspirational">Aspirational</SelectItem>
-                        <SelectItem value="market_leader">Market Leader</SelectItem>
-                        <SelectItem value="emerging_threat">Emerging Threat</SelectItem>
-                        <SelectItem value="partner">Partner</SelectItem>
-                        <SelectItem value="customer">Customer</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <CompanyTypeSelect value={editType} onValueChange={(v) => setEditType(v as CompanyType)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Monitoring Priority</Label>
