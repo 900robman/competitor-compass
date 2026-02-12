@@ -1,106 +1,81 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useCallback, useSyncExternalStore } from 'react';
 
-export interface CompanyTypeRecord {
-  id: string;
+export interface CompanyTypeConfig {
   value: string;
   label: string;
   color: string;
-  description: string | null;
-  is_active: boolean;
-  created_at: string;
+  description?: string;
 }
 
-export function useCompanyTypes() {
-  return useQuery({
-    queryKey: ['companyTypes'],
-    queryFn: async (): Promise<CompanyTypeRecord[]> => {
-      const { data, error } = await supabase
-        .from('company_types')
-        .select('*')
-        .order('label', { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as CompanyTypeRecord[];
-    },
-  });
+const STORAGE_KEY = 'company_type_configs';
+
+const DEFAULT_TYPES: CompanyTypeConfig[] = [
+  { value: 'direct_competitor', label: 'Direct Competitor', color: '#ef4444' },
+  { value: 'indirect_competitor', label: 'Indirect Competitor', color: '#f97316' },
+  { value: 'geographic_competitor', label: 'Geographic', color: '#3b82f6' },
+  { value: 'aspirational', label: 'Aspirational', color: '#a855f7' },
+  { value: 'market_leader', label: 'Market Leader', color: '#eab308' },
+  { value: 'emerging_threat', label: 'Emerging Threat', color: '#ec4899' },
+  { value: 'partner', label: 'Partner', color: '#22c55e' },
+  { value: 'customer', label: 'Customer', color: '#6366f1' },
+];
+
+// Listeners for useSyncExternalStore
+let listeners: (() => void)[] = [];
+function emitChange() {
+  listeners.forEach((l) => l());
 }
 
-export function useActiveCompanyTypes() {
-  const { data = [], ...rest } = useCompanyTypes();
-  return { data: data.filter((t) => t.is_active), ...rest };
+function getSnapshot(): CompanyTypeConfig[] {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return DEFAULT_TYPES;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return DEFAULT_TYPES;
+  }
 }
 
-export function useCreateCompanyType() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: { value: string; label: string; color: string; description?: string }) => {
-      const { data, error } = await supabase
-        .from('company_types')
-        .insert({
-          value: input.value,
-          label: input.label,
-          color: input.color,
-          description: input.description || null,
-          is_active: true,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companyTypes'] });
-    },
-  });
+function save(types: CompanyTypeConfig[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(types));
+  emitChange();
 }
 
-export function useUpdateCompanyType() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CompanyTypeRecord> }) => {
-      const { data, error } = await supabase
-        .from('company_types')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companyTypes'] });
-    },
-  });
+function subscribe(listener: () => void) {
+  listeners.push(listener);
+  return () => {
+    listeners = listeners.filter((l) => l !== listener);
+  };
 }
 
-export function useDeleteCompanyType() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('company_types')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companyTypes'] });
-    },
-  });
+/** React hook: returns live company type configs from localStorage */
+export function useCompanyTypes(): CompanyTypeConfig[] {
+  return useSyncExternalStore(subscribe, getSnapshot, () => DEFAULT_TYPES);
 }
 
-/** Count how many competitors use a given company_type value */
-export function useCompanyTypeUsageCount(value: string) {
-  return useQuery({
-    queryKey: ['companyTypeUsage', value],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('competitors')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_type', value);
-      if (error) throw error;
-      return count ?? 0;
-    },
-    enabled: !!value,
-  });
+/** Non-hook getter for use outside React */
+export function getCompanyTypes(): CompanyTypeConfig[] {
+  return getSnapshot();
+}
+
+export function addCompanyType(type: CompanyTypeConfig) {
+  const current = getSnapshot();
+  if (current.some((t) => t.value === type.value)) {
+    throw new Error('A type with this value already exists');
+  }
+  save([...current, type]);
+}
+
+export function updateCompanyType(value: string, updates: Partial<Omit<CompanyTypeConfig, 'value'>>) {
+  const current = getSnapshot();
+  save(current.map((t) => (t.value === value ? { ...t, ...updates } : t)));
+}
+
+export function deleteCompanyType(value: string) {
+  const current = getSnapshot();
+  save(current.filter((t) => t.value !== value));
+}
+
+export function resetCompanyTypes() {
+  save(DEFAULT_TYPES);
 }
