@@ -213,25 +213,40 @@ export default function InterviewSetupPage() {
     handleFiles(e.dataTransfer.files);
   }, [handleFiles]);
 
-  const handleStart = async (skip = false) => {
+  const handleStart = async () => {
     try {
-      const docCount = files.filter(f => f.status === 'completed').length;
+      // Update session flags if documents uploaded
+      if (files.length > 0 && sessionId) {
+        await supabase
+          .from('interview_sessions')
+          .update({
+            has_uploaded_docs: true,
+            website_analyzed: websitePageCount > 0,
+          })
+          .eq('id', sessionId);
+      }
 
+      // Get count of completed documents
+      const completedDocs = files.filter(f => f.status === 'completed').length;
+
+      // Call start_interview action to create initial message with context
       await supabase.functions.invoke('interview-public', {
         body: {
           action: 'start_interview',
           session_token: token,
           context: {
-            uploaded_documents: docCount,
+            uploaded_documents: completedDocs,
             website_pages_analyzed: websitePageCount,
-            skipped_setup: skip && docCount === 0,
           },
         },
       });
 
+      // Navigate to chat
       navigate(`/interview/${token}`);
-    } catch {
-      toast({ title: 'Error', description: 'Failed to start interview. Please try again.', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to start interview:', error);
+      // Navigate anyway to avoid blocking user
+      navigate(`/interview/${token}`);
     }
   };
 
@@ -363,14 +378,14 @@ export default function InterviewSetupPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <Button
             variant="ghost"
-            onClick={() => handleStart(true)}
+            onClick={() => handleStart()}
             className="text-muted-foreground"
           >
             <SkipForward className="h-4 w-4 mr-1.5" />
             Skip & Start Interview
           </Button>
           <Button
-            onClick={() => handleStart(false)}
+            onClick={() => handleStart()}
             disabled={hasUploading}
             className="px-6"
           >
