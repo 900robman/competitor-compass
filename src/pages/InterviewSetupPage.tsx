@@ -213,13 +213,26 @@ export default function InterviewSetupPage() {
     handleFiles(e.dataTransfer.files);
   }, [handleFiles]);
 
-  const handleStart = async () => {
-    if (files.length > 0 && sessionId) {
+  const handleStart = async (skip = false) => {
+    try {
+      const docCount = files.filter(f => f.status === 'completed').length;
+
       await supabase.functions.invoke('interview-public', {
-        body: { action: 'update_session', session_token: token, has_uploaded_docs: true },
-      }).catch(() => {});
+        body: {
+          action: 'start_interview',
+          session_token: token,
+          context: {
+            uploaded_documents: docCount,
+            website_pages_analyzed: websitePageCount,
+            skipped_setup: skip && docCount === 0,
+          },
+        },
+      });
+
+      navigate(`/interview/${token}`);
+    } catch {
+      toast({ title: 'Error', description: 'Failed to start interview. Please try again.', variant: 'destructive' });
     }
-    navigate(`/interview/${token}`);
   };
 
   const allProcessed = files.length === 0 || files.every(f => f.status === 'completed' || f.status === 'failed');
@@ -350,14 +363,14 @@ export default function InterviewSetupPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <Button
             variant="ghost"
-            onClick={handleStart}
+            onClick={() => handleStart(true)}
             className="text-muted-foreground"
           >
             <SkipForward className="h-4 w-4 mr-1.5" />
             Skip & Start Interview
           </Button>
           <Button
-            onClick={handleStart}
+            onClick={() => handleStart(false)}
             disabled={hasUploading}
             className="px-6"
           >

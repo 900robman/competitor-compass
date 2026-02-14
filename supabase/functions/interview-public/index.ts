@@ -116,6 +116,64 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Action: start_interview
+    if (action === 'start_interview') {
+      const body = await req.clone().json();
+      const context = body.context ?? {};
+      const docCount = context.uploaded_documents ?? 0;
+      const pageCount = context.website_pages_analyzed ?? 0;
+
+      const { data: session, error: sessErr } = await supabase
+        .from('interview_sessions')
+        .select('id')
+        .eq('session_token', session_token)
+        .single();
+
+      if (sessErr || !session) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Session not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Update session flags
+      await supabase
+        .from('interview_sessions')
+        .update({
+          has_uploaded_docs: docCount > 0,
+          website_analyzed: true,
+        })
+        .eq('id', session.id);
+
+      // Build context-aware greeting
+      const parts: string[] = [];
+      if (docCount > 0) parts.push(`${docCount} document${docCount > 1 ? 's' : ''} you uploaded`);
+      if (pageCount > 0) parts.push(`${pageCount} page${pageCount > 1 ? 's' : ''} from your website`);
+
+      let greeting: string;
+      if (parts.length > 0) {
+        greeting = `Hi! I'm here to learn about your business and help create compelling website content. I've reviewed ${parts.join(' and ')}. Let's dive in!\n\nTo start, could you tell me a bit about your business and what you do?`;
+      } else {
+        greeting = `Hi! I'm here to learn about your business and help create compelling website content.\n\nTo start, could you tell me a bit about your business and what you do?`;
+      }
+
+      // Insert initial assistant message
+      const { error: msgErr } = await supabase
+        .from('interview_messages')
+        .insert({
+          session_id: session.id,
+          role: 'assistant',
+          content: greeting,
+        });
+
+      if (msgErr) throw msgErr;
+
+      return new Response(
+        JSON.stringify({ success: true, data: { started: true } }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ success: false, error: 'Invalid action' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
