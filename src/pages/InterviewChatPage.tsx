@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Send, User, Bot, MessageSquare } from 'lucide-react';
+import { Loader2, Send, User, Bot, MessageSquare, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 
@@ -31,7 +28,7 @@ export default function InterviewChatPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const edgeFn = useCallback(async (action: string, extra: Record<string, unknown> = {}) => {
     const { data, error } = await supabase.functions.invoke('interview-public', {
@@ -42,7 +39,6 @@ export default function InterviewChatPage() {
     return data.data;
   }, [token]);
 
-  // Load session
   useEffect(() => {
     if (!token) return;
     (async () => {
@@ -59,7 +55,6 @@ export default function InterviewChatPage() {
     })();
   }, [token, edgeFn]);
 
-  // Auto-scroll
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -68,7 +63,6 @@ export default function InterviewChatPage() {
     const text = input.trim();
     if (!text || sending) return;
 
-    // Optimistic user message
     const tempMsg: Message = {
       id: `temp-${Date.now()}`,
       role: 'user',
@@ -81,16 +75,14 @@ export default function InterviewChatPage() {
 
     try {
       await edgeFn('send_message', { message: text });
-      // Refresh messages from DB
       const msgs = await edgeFn('get_messages');
       setMessages(msgs ?? []);
     } catch {
-      // Remove optimistic message on error
       setMessages(prev => prev.filter(m => m.id !== tempMsg.id));
       setInput(text);
     } finally {
       setSending(false);
-      textareaRef.current?.focus();
+      inputRef.current?.focus();
     }
   };
 
@@ -103,7 +95,7 @@ export default function InterviewChatPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-[hsl(var(--chat-bg))]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -125,114 +117,138 @@ export default function InterviewChatPage() {
   const isExpired = session.status === 'expired' || session.status === 'cancelled' || session.status === 'completed';
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-screen flex-col bg-[hsl(var(--chat-bg))]">
       {/* Header */}
-      <header className="border-b border-border px-6 py-4 shrink-0">
-        <div className="mx-auto max-w-3xl">
-          <h1 className="text-lg font-semibold text-foreground">{projectName}</h1>
-          <p className="text-sm text-muted-foreground">Website Redesign Interview</p>
+      <header className="bg-white border-b border-border px-8 py-6 shrink-0 relative">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold text-foreground">{projectName}</h1>
+          <p className="text-muted-foreground text-sm mt-1">Website Redesign Interview</p>
         </div>
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="mx-auto max-w-3xl px-6 py-6 space-y-6">
-            {messages.length === 0 && !sending && (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="rounded-full bg-primary/10 p-4 mb-4">
-                  <MessageSquare className="h-8 w-8 text-primary" />
-                </div>
-                <h2 className="text-lg font-medium text-foreground">Welcome!</h2>
-                <p className="text-sm text-muted-foreground max-w-sm mt-1">
-                  Send a message to begin the interview. The AI assistant will guide you through a series of questions.
-                </p>
+      <div className="flex-1 overflow-y-auto p-8 chat-scrollbar">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {messages.length === 0 && !sending && (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="rounded-full bg-primary/10 p-4 mb-4">
+                <MessageSquare className="h-8 w-8 text-primary" />
               </div>
-            )}
+              <h2 className="text-lg font-medium text-foreground">Welcome!</h2>
+              <p className="text-sm text-muted-foreground max-w-sm mt-1">
+                Send a message to begin the interview. The AI assistant will guide you through a series of questions.
+              </p>
+            </div>
+          )}
 
-            {messages.map((msg) => (
-              <div key={msg.id} className="flex gap-3">
-                <div
-                  className={`shrink-0 mt-0.5 rounded-full p-2 ${
-                    msg.role === 'user'
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {msg.role === 'user' ? (
-                    <User className="h-4 w-4" />
-                  ) : (
-                    <Bot className="h-4 w-4" />
-                  )}
-                </div>
-                <div className="flex-1 space-y-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-foreground">
-                      {msg.role === 'user' ? 'You' : 'AI Assistant'}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(msg.created_at), 'h:mm a')}
-                    </span>
-                  </div>
-                  <div className="text-sm text-foreground prose prose-sm max-w-none">
-                    <ReactMarkdown skipHtml>{msg.content}</ReactMarkdown>
-                  </div>
-                </div>
+          {messages.map((msg) =>
+            msg.role === 'user' ? (
+              <UserBubble key={msg.id} msg={msg} />
+            ) : (
+              <AssistantBubble key={msg.id} msg={msg} />
+            )
+          )}
+
+          {sending && (
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 border border-border">
+                <Bot className="h-4 w-4 text-muted-foreground" />
               </div>
-            ))}
-
-            {sending && (
-              <div className="flex gap-3">
-                <div className="shrink-0 mt-0.5 rounded-full p-2 bg-muted text-muted-foreground">
-                  <Bot className="h-4 w-4" />
-                </div>
-                <div className="flex items-center gap-2 py-2">
+              <div className="bg-white border border-border px-4 py-3 rounded-2xl rounded-tl-none shadow-sm">
+                <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
                   <span className="text-sm text-muted-foreground">Thinking…</span>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            <div ref={scrollRef} />
-          </div>
-        </ScrollArea>
+          <div ref={scrollRef} />
+        </div>
       </div>
 
       {/* Input */}
-      {!isExpired ? (
-        <div className="border-t border-border px-6 py-4 shrink-0">
-          <div className="mx-auto max-w-3xl flex gap-3">
-            <Textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type your message…"
-              disabled={sending}
-              className="min-h-[44px] max-h-[120px] resize-none"
-              rows={1}
-            />
-            <Button
-              onClick={handleSend}
-              disabled={sending || !input.trim()}
-              size="icon"
-              className="shrink-0 h-[44px] w-[44px]"
-            >
-              {sending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
+      <div className="p-6 bg-[hsl(var(--chat-bg))]">
+        <div className="max-w-4xl mx-auto">
+          {!isExpired ? (
+            <>
+              <div className="relative flex items-center bg-white rounded-xl shadow-lg border-2 border-border transition-all overflow-hidden p-2 group focus-within:border-primary">
+                <input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type your message..."
+                  disabled={sending}
+                  className="w-full border-none focus:ring-0 focus:outline-none text-foreground py-3 px-4 placeholder:text-muted-foreground bg-transparent text-base"
+                />
+                <div className="flex items-center gap-2 pr-2">
+                  <button
+                    onClick={handleSend}
+                    disabled={sending || !input.trim()}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground p-2.5 rounded-lg shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {sending ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Send className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <p className="text-[10px] text-center text-muted-foreground mt-3 font-medium uppercase tracking-widest">
+                AI Assistant may generate inaccurate info. Verify results.
+              </p>
+            </>
+          ) : (
+            <p className="text-center text-sm text-muted-foreground">
+              This interview session has ended. Thank you for your time!
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Bubble Components ─────────────────────────────────── */
+
+function AssistantBubble({ msg }: { msg: Message }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 border border-border">
+        <Bot className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="flex flex-col gap-1.5 max-w-[85%]">
+        <div className="bg-white border border-border px-5 py-4 rounded-2xl rounded-tl-none shadow-sm text-foreground leading-relaxed">
+          <div className="prose prose-sm max-w-none">
+            <ReactMarkdown skipHtml>{msg.content}</ReactMarkdown>
           </div>
         </div>
-      ) : (
-        <div className="border-t border-border px-6 py-4 shrink-0">
-          <p className="text-center text-sm text-muted-foreground">
-            This interview session has ended. Thank you for your time!
-          </p>
+        <span className="text-[10px] text-muted-foreground font-medium px-1">
+          {format(new Date(msg.created_at), 'h:mm a')}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function UserBubble({ msg }: { msg: Message }) {
+  return (
+    <div className="flex items-start gap-3 flex-row-reverse">
+      <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-md">
+        <User className="h-4 w-4 text-primary-foreground" />
+      </div>
+      <div className="flex flex-col gap-1.5 max-w-[75%] items-end">
+        <div className="bg-primary/10 border border-primary/20 px-4 py-3 rounded-2xl rounded-tr-none shadow-sm text-foreground leading-relaxed">
+          <div className="prose prose-sm max-w-none">
+            <ReactMarkdown skipHtml>{msg.content}</ReactMarkdown>
+          </div>
         </div>
-      )}
+        <span className="text-[10px] text-muted-foreground font-medium px-1 text-right">
+          {format(new Date(msg.created_at), 'h:mm a')}
+        </span>
+      </div>
     </div>
   );
 }

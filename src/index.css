@@ -52,6 +52,9 @@
     --input: 40 10% 90%;
     --ring: 200 89% 57%;
 
+    /* Chat background - warm cream */
+    --chat-bg: 30 100% 97%;
+
     /* Larger radius for warmth */
     --radius: 0.75rem;
 
@@ -109,6 +112,8 @@
     --sidebar-accent-foreground: 200 89% 70%;
     --sidebar-border: 0 0% 15%;
     --sidebar-ring: 200 89% 57%;
+
+    --chat-bg: 0 0% 10%;
   }
 }
 
@@ -141,5 +146,19 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: hsl(var(--muted-foreground) / 0.3);
     border-radius: 3px;
+  }
+
+  .chat-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .chat-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .chat-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 10px;
+  }
+  .chat-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
   }
 }
