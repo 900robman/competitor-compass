@@ -66,6 +66,7 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
   const [selectedPage, setSelectedPage] = useState<CompetitorPage | null>(null);
   const [scrapeStatusFilter, setScrapeStatusFilter] = useState('all');
   const [isBulkPending, setIsBulkPending] = useState(false);
+  const [isBulkCategorizing, setIsBulkCategorizing] = useState(false);
   const [isScraping, setIsScraping] = useState(false);
 
   const pendingPages = useMemo(() => {
@@ -176,6 +177,26 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
     }
   };
 
+  const handleBulkCategorize = async (category: string) => {
+    const ids = Array.from(selectedIds);
+    const competitorId = pages[0]?.competitor_id;
+    setIsBulkCategorizing(true);
+    try {
+      const { error } = await supabase
+        .from('competitor_pages')
+        .update({ category: category === 'Uncategorized' ? null : category })
+        .in('id', ids);
+      if (error) throw error;
+      toast.success(`Categorized ${ids.length} pages as "${category}"`);
+      setSelectedIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['competitorPages', competitorId] });
+    } catch (error) {
+      toast.error('Failed to categorize pages');
+    } finally {
+      setIsBulkCategorizing(false);
+    }
+  };
+
   if (isLoading) return null;
 
   return (
@@ -225,20 +246,40 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-accent/50 px-4 py-2">
           <span className="text-sm font-medium">{selectedIds.size} selected</span>
-          <Button
-            variant="outline"
-            size="sm"
-            className="ml-auto h-8"
-            onClick={handleBulkMarkPending}
-            disabled={isBulkPending}
-          >
-            {isBulkPending ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Clock className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            Mark as Pending
-          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            <Select
+              onValueChange={(val) => handleBulkCategorize(val)}
+              disabled={isBulkCategorizing}
+            >
+              <SelectTrigger className="h-8 w-[170px] text-xs">
+                <SelectValue placeholder={isBulkCategorizing ? 'Applying…' : 'Set Category'} />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                {dbCategories.filter(c => c.is_active).map((cat) => (
+                  <SelectItem key={cat.name} value={cat.name}>
+                    <CategoryBadge category={cat.name} color={cat.color} />
+                  </SelectItem>
+                ))}
+                <SelectItem value="Uncategorized">
+                  <CategoryBadge category="Uncategorized" />
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={handleBulkMarkPending}
+              disabled={isBulkPending}
+            >
+              {isBulkPending ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Clock className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Mark as Pending
+            </Button>
+          </div>
         </div>
       )}
 

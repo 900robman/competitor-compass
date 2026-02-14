@@ -220,8 +220,8 @@ function AssistantBubble({ msg }: { msg: Message }) {
         <Bot className="h-4 w-4 text-muted-foreground" />
       </div>
       <div className="flex flex-col gap-1.5 max-w-[85%]">
-        <div className="bg-white border border-border px-5 py-4 rounded-2xl rounded-tl-none shadow-sm text-foreground leading-relaxed">
-          <div className="prose prose-sm max-w-none">
+        <div className="bg-white border border-border px-5 py-3.5 rounded-2xl rounded-tl-none shadow-sm text-foreground leading-relaxed text-[13px]">
+          <div className="prose prose-xs max-w-none [&_p]:text-[13px] [&_li]:text-[13px]">
             <ReactMarkdown skipHtml>{msg.content}</ReactMarkdown>
           </div>
         </div>
@@ -240,8 +240,8 @@ function UserBubble({ msg }: { msg: Message }) {
         <User className="h-4 w-4 text-primary-foreground" />
       </div>
       <div className="flex flex-col gap-1.5 max-w-[75%] items-end">
-        <div className="bg-primary/10 border border-primary/20 px-4 py-3 rounded-2xl rounded-tr-none shadow-sm text-foreground leading-relaxed">
-          <div className="prose prose-sm max-w-none">
+        <div className="bg-primary/10 border border-primary/20 px-4 py-2.5 rounded-2xl rounded-tr-none shadow-sm text-foreground leading-relaxed text-[13px]">
+          <div className="prose prose-xs max-w-none [&_p]:text-[13px] [&_li]:text-[13px]">
             <ReactMarkdown skipHtml>{msg.content}</ReactMarkdown>
           </div>
         </div>
