@@ -1,9 +1,11 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { GlobalSearchBar } from './GlobalSearchBar';
@@ -16,6 +18,7 @@ interface HeaderProps {
 
 export function Header({ title, subtitle }: HeaderProps) {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const userInitials = user?.email
     ? user.email.slice(0, 2).toUpperCase()
@@ -40,9 +43,13 @@ export function Header({ title, subtitle }: HeaderProps) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem disabled className="text-muted-foreground">
-            <User className="mr-2 h-4 w-4" />
+          <DropdownMenuItem className="text-muted-foreground text-xs">
             {user?.email}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate('/profile')}>
+            <User className="mr-2 h-4 w-4" />
+            Profile
           </DropdownMenuItem>
           <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
             <LogOut className="mr-2 h-4 w-4" />
