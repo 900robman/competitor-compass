@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Send, User, Bot, MessageSquare, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -21,6 +21,7 @@ interface SessionData {
 
 export default function InterviewChatPage() {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const [session, setSession] = useState<SessionData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -46,7 +47,12 @@ export default function InterviewChatPage() {
         const s = await edgeFn('get_session');
         setSession(s);
         const msgs = await edgeFn('get_messages');
-        setMessages(msgs ?? []);
+        const messageList = msgs ?? [];
+        if (messageList.length === 0) {
+          navigate(`/interview/${token}/setup`, { replace: true });
+          return;
+        }
+        setMessages(messageList);
       } catch (e: any) {
         setError(e.message ?? 'Failed to load session');
       } finally {
