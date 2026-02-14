@@ -11,6 +11,7 @@ import ProjectWorkspacePage from "./pages/ProjectWorkspacePage";
 import CompetitorDetailPage from "./pages/CompetitorDetailPage";
 import CompareCategoriesPage from "./pages/CompareCategoriesPage";
 import SettingsPage from "./pages/SettingsPage";
+import InterviewChatPage from "./pages/InterviewChatPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/interview/:token" element={<InterviewChatPage />} />
             <Route path="/" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
             <Route path="/project/:projectId" element={<ProtectedRoute><ProjectWorkspacePage /></ProtectedRoute>} />
             <Route path="/project/:projectId/competitor/:competitorId" element={<ProtectedRoute><CompetitorDetailPage /></ProtectedRoute>} />

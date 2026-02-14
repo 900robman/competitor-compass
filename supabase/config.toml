@@ -1,2 +1,5 @@
 [functions.n8n-proxy]
 verify_jwt = false
+
+[functions.interview-public]
+verify_jwt = false
