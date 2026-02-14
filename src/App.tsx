@@ -12,6 +12,7 @@ import CompetitorDetailPage from "./pages/CompetitorDetailPage";
 import CompareCategoriesPage from "./pages/CompareCategoriesPage";
 import SettingsPage from "./pages/SettingsPage";
 import InterviewChatPage from "./pages/InterviewChatPage";
+import InterviewSetupPage from "./pages/InterviewSetupPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/interview/:token" element={<InterviewChatPage />} />
+            <Route path="/interview/:token/setup" element={<InterviewSetupPage />} />
             <Route path="/" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
             <Route path="/project/:projectId" element={<ProtectedRoute><ProjectWorkspacePage /></ProtectedRoute>} />
             <Route path="/project/:projectId/competitor/:competitorId" element={<ProtectedRoute><CompetitorDetailPage /></ProtectedRoute>} />
