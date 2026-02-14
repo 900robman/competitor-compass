@@ -34,6 +34,7 @@ import {
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
 
 interface PageDetailDrawerProps {
@@ -129,18 +130,18 @@ export function PageDetailDrawer({ page, open, onOpenChange }: PageDetailDrawerP
     setScrapeDialogOpen(false);
     setIsScraping(true);
     try {
-      const res = await fetch(
-        'https://n8n.offshoot.co.nz/webhook/competitor/scrape-batch',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('n8n-proxy', {
+        body: {
+          action: 'scrape-batch',
+          payload: {
             competitor_id: page.competitor_id,
             page_ids: [page.id],
-          }),
-        }
-      );
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+          },
+        },
+      });
+
+      if (error) throw new Error('Request failed');
+      if (!data?.success) throw new Error('Request failed');
 
       toast.success('Page scrape triggered', {
         description: 'Content will update once scraping completes.',
@@ -149,10 +150,8 @@ export function PageDetailDrawer({ page, open, onOpenChange }: PageDetailDrawerP
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['competitorPages', page.competitor_id] });
       }, 3000);
-    } catch (error) {
-      toast.error('Failed to trigger scrape', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-      });
+    } catch {
+      toast.error('Failed to trigger scrape');
     } finally {
       setIsScraping(false);
     }
@@ -252,7 +251,7 @@ export function PageDetailDrawer({ page, open, onOpenChange }: PageDetailDrawerP
               {page.markdown_content ? (
                 <ScrollArea className="h-[400px] rounded-lg border border-border bg-card p-6">
                   <article className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-code:text-accent-foreground prose-code:bg-accent prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-code:text-xs">
-                    <ReactMarkdown>{page.markdown_content}</ReactMarkdown>
+                    <ReactMarkdown skipHtml>{page.markdown_content}</ReactMarkdown>
                   </article>
                 </ScrollArea>
               ) : (

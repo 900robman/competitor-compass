@@ -53,13 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        console.error('Sign in error:', error.message, error);
-      }
       return { error: error as Error | null };
     } catch (err) {
-      console.error('Sign in network error:', err);
-      return { error: err as Error };
+      return { error: new Error('Sign in failed. Please try again.') };
     }
   };
 
@@ -69,24 +65,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: new Error('Supabase is not configured. Please check your environment variables.') };
     }
     const redirectUrl = `${window.location.origin}/`;
-    console.log('Attempting signup with redirect URL:', redirectUrl);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: redirectUrl,
         },
       });
-      if (error) {
-        console.error('Sign up error:', error.message, error);
-      } else {
-        console.log('Sign up response:', data);
-      }
       return { error: error as Error | null };
     } catch (err) {
-      console.error('Sign up network error:', err);
-      return { error: err as Error };
+      return { error: new Error('Sign up failed. Please try again.') };
     }
   };
 
