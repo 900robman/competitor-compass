@@ -18,7 +18,15 @@ Deno.serve(async (req) => {
   try {
     const { action, session_token, message } = await req.json();
 
-    // Action: get_session – load session + project name by token
+    // Validate session_token format (basic input validation)
+    if (!session_token || typeof session_token !== 'string' || session_token.length > 200) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid session token' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Action: get_session
     if (action === 'get_session') {
       const { data: session, error } = await supabase
         .from('interview_sessions')
@@ -39,9 +47,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Action: get_messages – fetch chat history for a session
+    // Action: get_messages
     if (action === 'get_messages') {
-      // First resolve session id from token
       const { data: session } = await supabase
         .from('interview_sessions')
         .select('id')
@@ -69,17 +76,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Action: send_message – forward to n8n and return
+    // Action: send_message
     if (action === 'send_message') {
-      const n8nUrl = 'https://n8n.offshoot.co.nz/webhook/redesign/interview-chat';
+      // Validate message input
+      if (!message || typeof message !== 'string' || message.length > 10000) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid message' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const n8nUrl = Deno.env.get('N8N_INTERVIEW_URL') || 'https://n8n.offshoot.co.nz/webhook/redesign/interview-chat';
 
       const res = await fetch(n8nUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_token,
-          message,
-        }),
+        body: JSON.stringify({ session_token, message }),
       });
 
       const responseText = await res.text();
@@ -93,8 +105,8 @@ Deno.serve(async (req) => {
       if (!res.ok) {
         console.error('n8n error:', res.status, responseText);
         return new Response(
-          JSON.stringify({ success: false, error: `Webhook returned ${res.status}`, details: responseData }),
-          { status: res.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ success: false, error: 'Failed to process message' }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
@@ -111,7 +123,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ success: false, error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

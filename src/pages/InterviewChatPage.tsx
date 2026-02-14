@@ -175,7 +175,7 @@ export default function InterviewChatPage() {
                     </span>
                   </div>
                   <div className="text-sm text-foreground prose prose-sm max-w-none">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    <ReactMarkdown skipHtml>{msg.content}</ReactMarkdown>
                   </div>
                 </div>
               </div>

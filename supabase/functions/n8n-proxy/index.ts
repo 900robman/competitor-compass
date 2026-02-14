@@ -1,10 +1,10 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
-
-const N8N_BASE = 'https://n8n.offshoot.co.nz/webhook/competitor';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,25 +12,50 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // --- Authentication ---
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { action, payload, query_params } = await req.json();
 
     // Validate action
     const allowedActions = ['map_site', 'scrape-batch'];
     if (!allowedActions.includes(action)) {
       return new Response(
-        JSON.stringify({ success: false, error: `Invalid action: ${action}` }),
+        JSON.stringify({ success: false, error: 'Invalid action' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Build n8n URL with optional query params
-    let url = `${N8N_BASE}/${action}`;
+    const n8nBase = Deno.env.get('N8N_BASE_URL') || 'https://n8n.offshoot.co.nz/webhook/competitor';
+    let url = `${n8nBase}/${action}`;
     if (query_params) {
       const params = new URLSearchParams(query_params);
       url += `?${params.toString()}`;
     }
 
-    console.log(`Proxying to n8n: ${url}`);
+    console.log(`Proxying to n8n: ${action}`);
 
     const res = await fetch(url, {
       method: 'POST',
@@ -49,8 +74,8 @@ Deno.serve(async (req) => {
     if (!res.ok) {
       console.error('n8n error:', res.status, responseText);
       return new Response(
-        JSON.stringify({ success: false, error: `n8n returned ${res.status}`, details: responseData }),
-        { status: res.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'Upstream service error' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -61,7 +86,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Proxy error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ success: false, error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
