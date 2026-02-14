@@ -1,4 +1,4 @@
-import { NavLink, useParams } from 'react-router-dom';
+import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ interface SidebarProps {
 export function Sidebar({ projectName }: SidebarProps) {
   const { projectId } = useParams();
   const { signOut } = useAuth();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
   const isInProject = !!projectId;
@@ -89,11 +90,11 @@ export function Sidebar({ projectName }: SidebarProps) {
       <div className="border-t border-sidebar-border p-2 space-y-1">
         <Button
           variant="ghost"
+          onClick={() => navigate('/profile')}
           className={cn(
             'w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent/50',
             collapsed && 'justify-center px-2'
           )}
-          disabled
         >
           <User className="h-5 w-5 shrink-0" />
           {!collapsed && <span>Profile</span>}
