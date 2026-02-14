@@ -23,6 +23,7 @@ import { CategoryBadge } from '@/components/competitors/CategoryBadge';
 import { ScrapeStatusBadge } from '@/components/competitors/ScrapeStatusBadge';
 import { PageDetailDrawer } from '@/components/competitors/PageDetailDrawer';
 import { Search, FileText, Loader2, Clock } from 'lucide-react';
+import { MultiSelectFilter } from '@/components/competitors/MultiSelectFilter';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -61,7 +62,7 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
   const queryClient = useQueryClient();
   const { data: dbCategories = [] } = usePageCategories();
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedPage, setSelectedPage] = useState<CompetitorPage | null>(null);
   const [scrapeStatusFilter, setScrapeStatusFilter] = useState('all');
@@ -132,7 +133,7 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
         !q ||
         p.url.toLowerCase().includes(q) ||
         (p.title ?? '').toLowerCase().includes(q);
-      const matchesCat = categoryFilter === 'all' || getCategory(p) === categoryFilter;
+      const matchesCat = categoryFilter.size === 0 || categoryFilter.has(getCategory(p));
       const matchesScrape = scrapeStatusFilter === 'all' || (p.scrape_status ?? 'unknown') === scrapeStatusFilter;
       return matchesSearch && matchesCat && matchesScrape;
     });
@@ -203,19 +204,12 @@ export function ContentTab({ pages, isLoading }: ContentTabProps) {
     <div className="space-y-4">
       {/* Filters row */}
       <div className="flex items-center gap-3">
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="h-9 w-[220px] text-sm">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover z-50">
-            <SelectItem value="all">All Categories ({pages.length})</SelectItem>
-            {categoryCounts.map(([cat, count]) => (
-              <SelectItem key={cat} value={cat}>
-                {cat} ({count})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <MultiSelectFilter
+          label="Categories"
+          options={categoryCounts.map(([cat]) => cat)}
+          selected={categoryFilter}
+          onChange={setCategoryFilter}
+        />
 
         <Select value={scrapeStatusFilter} onValueChange={setScrapeStatusFilter}>
           <SelectTrigger className="h-9 w-[180px] text-sm">
