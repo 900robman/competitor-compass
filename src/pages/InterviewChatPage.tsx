@@ -131,13 +131,41 @@ export default function InterviewChatPage() {
         <div className="max-w-4xl mx-auto space-y-6">
           {messages.length === 0 && !sending && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="rounded-full bg-primary/10 p-4 mb-4">
-                <MessageSquare className="h-8 w-8 text-primary" />
+              <div className="rounded-full bg-primary/10 p-6 mb-6">
+                <MessageSquare className="h-10 w-10 text-primary" />
               </div>
-              <h2 className="text-lg font-medium text-foreground">Welcome!</h2>
-              <p className="text-sm text-muted-foreground max-w-sm mt-1">
-                Send a message to begin the interview. The AI assistant will guide you through a series of questions.
+              <h2 className="text-2xl font-bold text-foreground">Welcome to your interview!</h2>
+              <p className="text-sm text-muted-foreground max-w-md mt-2 leading-relaxed">
+                We'll ask you a series of questions to better understand your needs. When you're ready, hit the button below to begin.
               </p>
+              <button
+                onClick={() => {
+                  const text = "I'm Ready. Let's Start";
+                  const tempMsg: Message = {
+                    id: `temp-${Date.now()}`,
+                    role: 'user',
+                    content: text,
+                    created_at: new Date().toISOString(),
+                  };
+                  setMessages(prev => [...prev, tempMsg]);
+                  setSending(true);
+                  (async () => {
+                    try {
+                      await edgeFn('send_message', { message: text });
+                      const msgs = await edgeFn('get_messages');
+                      setMessages(msgs ?? []);
+                    } catch {
+                      setMessages(prev => prev.filter(m => m.id !== tempMsg.id));
+                    } finally {
+                      setSending(false);
+                      inputRef.current?.focus();
+                    }
+                  })();
+                }}
+                className="mt-8 bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-xl text-base font-semibold shadow-lg transition-all active:scale-95"
+              >
+                I'm Ready. Let's Start
+              </button>
             </div>
           )}
 
