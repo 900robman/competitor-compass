@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +18,7 @@ import {
 import { useProject } from '@/hooks/useProjects';
 import { useCompetitors, useCreateCompetitor, useDeleteCompetitor } from '@/hooks/useCompetitors';
 import { toast } from 'sonner';
-import { Plus, Loader2, Globe, Search } from 'lucide-react';
+import { Plus, Loader2, Globe, Search, MessageSquare } from 'lucide-react';
 import { Competitor, CompanyType, MonitoringPriority } from '@/types/database';
 import {
   Select,
@@ -31,6 +32,7 @@ import { YourWebsiteCard } from '@/components/workspace/YourWebsiteCard';
 import { WorkspaceStatsCards } from '@/components/workspace/WorkspaceStatsCards';
 import { CompetitorsTable } from '@/components/workspace/CompetitorsTable';
 import { AddCompanyDialog } from '@/components/workspace/AddCompanyDialog';
+import { ClientInterviewTab } from '@/components/interview/ClientInterviewTab';
 
 function isProjectSiteCompetitor(competitor: Competitor): boolean {
   const config = competitor.crawl_config as any;
@@ -165,109 +167,118 @@ export default function ProjectWorkspacePage() {
           <div className="p-6 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-semibold text-foreground">
-                  {project?.name ?? 'Workspace'}
-                </h1>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search companies... ⌘K"
-                    className="h-9 w-64 pl-9"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Button onClick={() => setDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Company
-                </Button>
-              </div>
+              <h1 className="text-2xl font-semibold text-foreground">
+                {project?.name ?? 'Workspace'}
+              </h1>
             </div>
 
-            {/* Stats Cards */}
-            <WorkspaceStatsCards competitors={regularCompetitors} />
+            <Tabs defaultValue="competitors" className="w-full">
+              <TabsList>
+                <TabsTrigger value="competitors">Tracked Companies</TabsTrigger>
+                <TabsTrigger value="interviews" className="flex items-center gap-1.5">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  Client Interviews
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Tracked Companies Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">Tracked Companies</h2>
-              </div>
-
-              {/* Filters */}
-              <div className="flex items-center gap-3">
-                <CompanyTypeSelect
-                  value={filterType}
-                  onValueChange={(v) => setFilterType(v as CompanyType | 'all')}
-                  includeAll
-                  className="w-[180px]"
-                />
-                <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={filterPriority} onValueChange={(v) => setFilterPriority(v as any)}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="All Priority" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    <SelectItem value="all">All Priority</SelectItem>
-                    <SelectItem value="high">High Priority</SelectItem>
-                    <SelectItem value="medium">Medium Priority</SelectItem>
-                    <SelectItem value="low">Low Priority</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Table */}
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <TabsContent value="competitors" className="mt-6 space-y-6">
+                {/* Search + Add */}
+                <div className="flex items-center justify-end gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Search companies... ⌘K"
+                      className="h-9 w-64 pl-9"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <Button onClick={() => setDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Company
+                  </Button>
                 </div>
-              ) : filteredCompetitors.length > 0 ? (
-                <Card className="border-border/50">
-                  <CompetitorsTable
-                    competitors={filteredCompetitors}
-                    projectId={projectId!}
-                    onDelete={(id) => {
-                      setCompetitorToDelete(id);
-                      setDeleteDialogOpen(true);
-                    }}
+
+                {/* Stats Cards */}
+                <WorkspaceStatsCards competitors={regularCompetitors} />
+
+                {/* Filters */}
+                <div className="flex items-center gap-3">
+                  <CompanyTypeSelect
+                    value={filterType}
+                    onValueChange={(v) => setFilterType(v as CompanyType | 'all')}
+                    includeAll
+                    className="w-[180px]"
                   />
-                </Card>
-              ) : regularCompetitors.length > 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <p className="text-sm text-muted-foreground">No companies match your filters.</p>
-                    <Button variant="link" className="mt-2" onClick={() => { setFilterType('all'); setFilterStatus('all'); setFilterPriority('all'); setSearchQuery(''); }}>
-                      Clear filters
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="border-dashed">
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <div className="rounded-full bg-muted p-4">
-                      <Globe className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="mt-4 text-lg font-medium text-foreground">No tracked companies yet</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">Add your first company to start tracking.</p>
-                    <Button className="mt-4" onClick={() => setDialogOpen(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Company
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                  <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterPriority} onValueChange={(v) => setFilterPriority(v as any)}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="All Priority" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      <SelectItem value="all">All Priority</SelectItem>
+                      <SelectItem value="high">High Priority</SelectItem>
+                      <SelectItem value="medium">Medium Priority</SelectItem>
+                      <SelectItem value="low">Low Priority</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Table */}
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : filteredCompetitors.length > 0 ? (
+                  <Card className="border-border/50">
+                    <CompetitorsTable
+                      competitors={filteredCompetitors}
+                      projectId={projectId!}
+                      onDelete={(id) => {
+                        setCompetitorToDelete(id);
+                        setDeleteDialogOpen(true);
+                      }}
+                    />
+                  </Card>
+                ) : regularCompetitors.length > 0 ? (
+                  <Card className="border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <p className="text-sm text-muted-foreground">No companies match your filters.</p>
+                      <Button variant="link" className="mt-2" onClick={() => { setFilterType('all'); setFilterStatus('all'); setFilterPriority('all'); setSearchQuery(''); }}>
+                        Clear filters
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <div className="rounded-full bg-muted p-4">
+                        <Globe className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="mt-4 text-lg font-medium text-foreground">No tracked companies yet</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">Add your first company to start tracking.</p>
+                      <Button className="mt-4" onClick={() => setDialogOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Company
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              <TabsContent value="interviews" className="mt-6">
+                <ClientInterviewTab projectId={projectId!} />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
