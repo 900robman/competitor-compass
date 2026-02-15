@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Send, User, Bot, MessageSquare, X } from 'lucide-react';
+import { Loader2, Send, User, Bot, MessageSquare } from 'lucide-react';
+import { MidInterviewUploadButton } from '@/components/interview/MidInterviewUpload';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 
@@ -183,7 +184,13 @@ export default function InterviewChatPage() {
                   disabled={sending}
                   className="w-full border-none focus:ring-0 focus:outline-none text-foreground py-3 px-4 placeholder:text-muted-foreground bg-transparent text-base"
                 />
-                <div className="flex items-center gap-2 pr-2">
+                <div className="flex items-center gap-1 pr-2">
+                  {session && (
+                    <MidInterviewUploadButton
+                      sessionToken={token!}
+                      sessionId={session.id}
+                    />
+                  )}
                   <button
                     onClick={handleSend}
                     disabled={sending || !input.trim()}
