@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Send, User, Bot, MessageSquare } from 'lucide-react';
 import { MidInterviewUploadButton } from '@/components/interview/MidInterviewUpload';
+import { YesNoQuestion, CheckboxQuestion, MultiSelectQuestion } from '@/components/interview/QuestionTypes';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 
@@ -11,6 +12,12 @@ interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   created_at: string;
+  question_type?: string;
+  options?: string[];
+  selected_options?: string[];
+  metadata?: {
+    explanation?: string;
+  };
 }
 
 interface SessionData {
@@ -66,8 +73,8 @@ export default function InterviewChatPage() {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = async () => {
-    const text = input.trim();
+  const handleSend = async (message?: string, selectedOptions?: string[]) => {
+    const text = message || input.trim();
     if (!text || sending) return;
 
     const tempMsg: Message = {
@@ -75,13 +82,17 @@ export default function InterviewChatPage() {
       role: 'user',
       content: text,
       created_at: new Date().toISOString(),
+      selected_options: selectedOptions,
     };
     setMessages(prev => [...prev, tempMsg]);
     setInput('');
     setSending(true);
 
     try {
-      await edgeFn('send_message', { message: text });
+      await edgeFn('send_message', { 
+        message: text,
+        selected_options: selectedOptions 
+      });
       const msgs = await edgeFn('get_messages');
       setMessages(msgs ?? []);
     } catch {
@@ -192,7 +203,7 @@ export default function InterviewChatPage() {
                     />
                   )}
                   <button
-                    onClick={handleSend}
+                    onClick={() => handleSend()}
                     disabled={sending || !input.trim()}
                     className="bg-primary hover:bg-primary/90 text-primary-foreground p-2.5 rounded-lg shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:pointer-events-none"
                   >
