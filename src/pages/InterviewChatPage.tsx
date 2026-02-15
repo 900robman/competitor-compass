@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Send, User, Bot, MessageSquare } from 'lucide-react';
+import { Loader2, Send, User, Bot, MessageSquare, CheckCircle2 } from 'lucide-react';
 import { MidInterviewUploadButton } from '@/components/interview/MidInterviewUpload';
 import { YesNoQuestion, CheckboxQuestion, MultiSelectQuestion } from '@/components/interview/QuestionTypes';
 import ReactMarkdown from 'react-markdown';
@@ -111,6 +111,83 @@ export default function InterviewChatPage() {
     }
   };
 
+  const renderQuestionInput = () => {
+    if (isExpired || messages.length === 0) return null;
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage || lastMessage.role !== 'assistant') return null;
+    const questionType = lastMessage.question_type || 'open';
+    const explanation = lastMessage.metadata?.explanation;
+
+    switch (questionType) {
+      case 'yesno':
+        return (
+          <YesNoQuestion
+            question={lastMessage.content}
+            explanation={explanation}
+            onAnswer={(answer) => handleSend(answer)}
+          />
+        );
+      case 'checkbox':
+        return (
+          <CheckboxQuestion
+            question={lastMessage.content}
+            options={lastMessage.options || []}
+            explanation={explanation}
+            onAnswer={(selected) => {
+              const answer = `Selected: ${selected.join(', ')}`;
+              handleSend(answer, selected);
+            }}
+          />
+        );
+      case 'multiselect':
+        return (
+          <MultiSelectQuestion
+            question={lastMessage.content}
+            options={lastMessage.options || []}
+            explanation={explanation}
+            onAnswer={(selected) => {
+              const answer = `Selected: ${selected.join(', ')}`;
+              handleSend(answer, selected);
+            }}
+          />
+        );
+      case 'open':
+      default:
+        return (
+          <div className="relative flex items-center bg-white rounded-xl shadow-lg border-2 border-border transition-all overflow-hidden p-2 group focus-within:border-primary">
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message..."
+              disabled={sending}
+              className="w-full border-none focus:ring-0 focus:outline-none text-foreground py-3 px-4 placeholder:text-muted-foreground bg-transparent text-base"
+            />
+            <div className="flex items-center gap-1 pr-2">
+              {session && (
+                <MidInterviewUploadButton
+                  sessionToken={token!}
+                  sessionId={session.id}
+                />
+              )}
+              <button
+                onClick={() => handleSend()}
+                disabled={sending || !input.trim()}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground p-2.5 rounded-lg shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {sending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+          </div>
+        );
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-[hsl(var(--chat-bg))]">
@@ -185,36 +262,7 @@ export default function InterviewChatPage() {
         <div className="max-w-4xl mx-auto">
           {!isExpired ? (
             <>
-              <div className="relative flex items-center bg-white rounded-xl shadow-lg border-2 border-border transition-all overflow-hidden p-2 group focus-within:border-primary">
-                <input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Type your message..."
-                  disabled={sending}
-                  className="w-full border-none focus:ring-0 focus:outline-none text-foreground py-3 px-4 placeholder:text-muted-foreground bg-transparent text-base"
-                />
-                <div className="flex items-center gap-1 pr-2">
-                  {session && (
-                    <MidInterviewUploadButton
-                      sessionToken={token!}
-                      sessionId={session.id}
-                    />
-                  )}
-                  <button
-                    onClick={() => handleSend()}
-                    disabled={sending || !input.trim()}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground p-2.5 rounded-lg shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:pointer-events-none"
-                  >
-                    {sending ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Send className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
+              {renderQuestionInput()}
               <p className="text-[10px] text-center text-muted-foreground mt-3 font-medium uppercase tracking-widest">
                 AI Assistant may generate inaccurate info. Verify results.
               </p>
@@ -260,9 +308,21 @@ function UserBubble({ msg }: { msg: Message }) {
       </div>
       <div className="flex flex-col gap-1.5 max-w-[75%] items-end">
         <div className="bg-primary/10 border border-primary/20 px-4 py-2.5 rounded-2xl rounded-tr-none shadow-sm text-foreground leading-relaxed text-[13px]">
-          <div className="prose prose-xs max-w-none [&_p]:text-[13px] [&_li]:text-[13px]">
-            <ReactMarkdown skipHtml>{msg.content}</ReactMarkdown>
-          </div>
+          {msg.selected_options && msg.selected_options.length > 0 ? (
+            <div className="space-y-1.5">
+              <p className="text-[13px] font-medium text-foreground">Selected:</p>
+              {msg.selected_options.map((opt) => (
+                <div key={opt} className="flex items-center gap-1.5 text-[13px]">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span>{opt}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="prose prose-xs max-w-none [&_p]:text-[13px] [&_li]:text-[13px]">
+              <ReactMarkdown skipHtml>{msg.content}</ReactMarkdown>
+            </div>
+          )}
         </div>
         <span className="text-[10px] text-muted-foreground font-medium px-1 text-right">
           {format(new Date(msg.created_at), 'h:mm a')}
