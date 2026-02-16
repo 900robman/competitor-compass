@@ -1,9 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase configuration
-// These are publishable keys - safe to include in frontend code
-const SUPABASE_URL = 'https://bsloebohbsepdfoldsud.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbG9lYm9oYnNlcGRmb2xkc3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxODk0ODUsImV4cCI6MjA4NDc2NTQ4NX0.VnotHm2o-X0UCa6m-yKZA_cYzokKc8Qrxvpu-kZl0gU';
+// Get Supabase configuration from environment variables
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Validate that environment variables are set
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error(
+    'Missing Supabase environment variables. Please check your .env.local file.'
+  );
+}
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
