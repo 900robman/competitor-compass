@@ -1,174 +1,157 @@
 # Current Context
 
-**Last Updated**: February 15, 2026
+**Last Updated**: February 17, 2026
 
 ---
 
-## 🎯 No Active Task
+## Current Status
 
-Project migrated to Claude Desktop workflow. Ready for first task.
+The interview chatbot core flow is complete and verified in production (55 messages, 25 extracted data records from a real session). PDF/DOCX extraction is implemented. The auto-trigger for document processing was added today. The scrape pipeline is fully operational end-to-end.
 
----
-
-## Recently Completed
-
-### ✅ Phase 3: Interview Chatbot - Database & Document Upload (40% Complete)
-
-**What We Built**:
-1. **Database Schema** (100%)
-   - Created `interview_documents`, `interview_context`, `interview_outputs` tables
-   - Enhanced `interview_sessions` and `interview_messages` with new columns
-   - Implemented RLS policies for public interview access
-   - Created `interview-documents` storage bucket (10MB limit, public)
-
-2. **Document Upload UI** (100%)
-   - Interview setup page at `/interview/:token/setup`
-   - Drag & drop file upload (PDF, DOCX, TXT)
-   - File list with status tracking
-   - Website analysis card
-   - Navigation flow to chat page
-
-3. **Document Processing Core** (70%)
-   - Edge Function: `process-interview-document`
-   - ✅ TXT file text extraction
-   - ✅ Claude API integration for business data analysis
-   - ✅ Structured data extraction (services, audience, differentiators, pricing, etc.)
-   - ✅ Storage in `extracted_data` field and `interview_context` table
-   - ⏳ PDF extraction (needs PDF.js library)
-   - ⏳ DOCX extraction (needs mammoth.js library)
-
-4. **Interview Chat Flow** (100%)
-   - Basic chat interface with message bubbles
-   - n8n workflow processes messages through Claude
-   - Initial greeting references uploaded documents
-   - Context-aware question generation
-
-**Key Files Modified**:
-- Database migrations: 3 new tables, 2 enhanced tables
-- Edge Functions: `interview-public` (updated), `process-interview-document` (new)
-- Frontend: `InterviewSetupPage.tsx`, `InterviewChatPage.tsx`
-- n8n: "Interview Chatbot" workflow
-
-### ✅ Phase 2: Site Mapping Workflow - Deployed & Working (100%)
-
-- n8n workflow "Competitor - Map Site from Main URL" published
-- Firecrawl Map API integration complete
-- Auto-categorization of discovered pages
-- Complete job tracking in `crawl_jobs` table
-- Database webhooks trigger mapping on competitor INSERT
-
-### ✅ Phase 1: Database Foundation (100%)
-
-- All core tables created with proper relationships
-- RLS policies implemented on all tables
-- Job tracking system for Firecrawl operations
-- Multi-tenant architecture (projects → competitors → pages)
+We are now moving into the next development phase. Three features have been agreed on, in priority order:
 
 ---
 
-## Next Steps (When Ready for New Task)
+## Upcoming Features — Agreed Priority Order
 
-### Priority 1: Complete Document Processing
-1. **Add PDF Text Extraction**
-   - Implement PDF.js in `process-interview-document` Edge Function
-   - Test with real PDF uploads
-   - Verify extracted text quality
-
-2. **Add DOCX Text Extraction**
-   - Implement mammoth.js in Edge Function
-   - Test with real DOCX uploads
-   - Verify structured content extraction
-
-3. **Fix Auto-trigger**
-   - Configure pg_net extension in Supabase
-   - Re-enable database trigger for automatic processing
-   - Test end-to-end upload → process → chat flow
-
-### Priority 2: Website Content Analysis (Milestone 3)
-- Build Edge Function action to aggregate website pages
-- Query `competitor_pages` for scraped content
-- Send to Claude for business analysis
-- Store results in `interview_context`
-- Update initial greeting to reference website insights
-
-### Priority 3: Dynamic Question Types (Milestone 4)
-- Enhance Claude system prompt for question format generation
-- Build UI components: Checkbox, Multi-select, Yes/No
-- Update message handling to save selected_options
-- Test structured question flow
+### 🔴 Feature 1: Interview Completion & Output Generation (IN PROGRESS)
+### 🟠 Feature 2: AI Insights from Scraped Content (Phase 4)
+### 🟡 Feature 3: Sitemap Builder UI (Phase 5)
 
 ---
 
-## Known Issues
+## Feature 1: Interview Completion & Output Generation
 
-1. **PDF/DOCX Extraction Not Implemented**
-   - Status: Libraries need to be added to Edge Function
-   - Workaround: Test with TXT files or manually insert extracted_text
-   - Priority: High - blocking full document processing
+**Priority**: Highest
+**Status**: Starting now
 
-2. **Document Processing Trigger Disabled**
-   - Status: pg_net extension not configured
-   - Workaround: Manual Edge Function trigger via browser console
-   - Priority: Medium - manual trigger works fine for testing
+### The Problem
+The interview chatbot has no ending. Claude continues the conversation indefinitely — no signal that enough has been covered, no transition to "done", and `interview_outputs` is empty. The interview collects data well but produces no deliverable.
 
-3. **No Website Analysis Yet**
-   - Status: Feature not built (next milestone)
-   - Impact: Can't leverage scraped competitor pages in interviews
-   - Priority: Medium - document processing more critical
+### What Needs to Be Built
+
+#### Part A: Completion Detection
+Claude needs to recognise when sufficient information has been gathered across the key categories and wrap up the session gracefully.
+
+- Claude signals completion by including a `<interview_complete>true</interview_complete>` tag in its response (same pattern as `<extracted_data>`)
+- The n8n workflow detects this tag and:
+  - Strips it from the displayed message (same as extracted_data)
+  - Updates `interview_sessions.status` → `'completed'`
+  - Updates `interview_sessions.completed_at`
+- The frontend detects `status = 'completed'` and transitions the UI to a "complete" state (locks input, shows completion message, offers to view outputs)
+
+**Completion criteria Claude should use** (to be defined in system prompt):
+- Services/offerings covered ✅
+- Target audience identified ✅
+- Key differentiators captured ✅
+- Brand voice/tone understood ✅
+- At least one open-ended question answered (story/background)
+- Typically 10–15 questions minimum
+
+#### Part B: Output Generation
+Once an interview is marked complete, a workflow reads all `client_responses` for the session and generates structured website copy, storing it in `interview_outputs`.
+
+**Output types to generate** (matching `interview_outputs.output_type` enum):
+- `page_content` — Full page recommendations (homepage, about, services)
+- `copy_suggestions` — Key headline/tagline options, value proposition statements
+
+**Tables involved**:
+- Read from: `client_responses` (all records for session), `interview_context` (document analysis)
+- Write to: `interview_outputs` (one row per output type/page)
+- Update: `interview_sessions.status` if not already completed
+
+#### Part C: Output Display UI
+A view in the frontend where the agency/user can see the generated outputs from a completed interview session. Most likely a new tab or section in `ClientInterviewTab` or a dedicated page.
+
+### Key Data Available for Output Generation
+The `client_responses` table already has 25 structured records including:
+- `services` — what the client offers
+- `target_audience` — who they serve
+- `unique_value_props` — differentiators
+- `pricing_model` — how they charge
+- `brand_voice` — tone and personality
+- `content_priorities` — what matters most on the site
+
+### Components to Modify / Create
+- **n8n**: "Competitor Compass - Client Interview Chatbot" workflow — add completion detection in Parse Response node, add session update step
+- **n8n**: New workflow (or additional branch) for output generation triggered on session completion
+- **Edge Function**: `interview-public` — may need a `get_outputs` action added
+- **Frontend**: `InterviewChatPage` — handle `completed` session status in UI
+- **Frontend**: `ClientInterviewTab` — show completed sessions with outputs link
+- **Frontend**: New component or page for viewing `interview_outputs`
 
 ---
 
-## Important Context for Next Session
+## Feature 2: AI Insights from Scraped Content (Phase 4)
 
-### Test Data Available
-- **Test PDF**: `Creative-Business-Brand-Guidelines.pdf` (contains intentionally different info from website)
-- **Test Session**: `interview-f95a9c84-e832-444b-92ae-c4b8f68870a3`
-- **Database**: Ready with test documents and extracted data
+**Priority**: High (after Feature 1)
+**Status**: Planned
 
-### Manual Testing Commands
+### The Problem
+222 scraped pages are sitting in the database with full markdown content. There is no workflow yet that reads this content, sends it to Claude for analysis, and writes structured competitive intelligence back.
 
-**Trigger Document Processing**:
-```javascript
-const response = await fetch('https://bsloebohbsepdfoldsud.supabase.co/functions/v1/process-interview-document', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-  },
-  body: JSON.stringify({ document_id: 'uuid-here' })
-});
-```
+### What Needs to Be Built
+- n8n workflow that reads `competitor_pages` where `scrape_status = 'success'`
+- Sends content to Claude for analysis (services, pricing, messaging, positioning)
+- Writes structured results to `competitor_insights` with `embedding` vectors (pgvector)
+- UI to surface insights per competitor and across competitors
 
-**Check Processing Status**:
-```sql
-SELECT id, filename, processing_status, 
-       LENGTH(extracted_text) as text_length,
-       extracted_data
-FROM interview_documents
-WHERE interview_session_id = 'SESSION_ID'
-ORDER BY uploaded_at DESC;
-```
-
-### Environment Setup Needed
-- ⚠️ **Add to Supabase Secrets**: `ANTHROPIC_API_KEY` (for Edge Functions to call Claude)
-- ⚠️ **Local Development**: Not yet set up (currently using Lovable)
+### Infrastructure Already Ready
+- `competitor_insights` table (schema complete, 0 rows)
+- `match_competitor_content` RPC (vector similarity search)
+- pgvector extension installed
+- 222 pages of scraped content ready to process
 
 ---
 
-## Project URLs & Access
+## Feature 3: Sitemap Builder UI (Phase 5)
 
-- **Frontend**: https://intel-spotter-09.lovable.app
+**Priority**: Medium (after Feature 2)
+**Status**: Planned
+
+### The Problem
+The `sitemaps` and `wireframe_sections` tables exist but have no UI and no data. This is where competitive intelligence and interview outputs converge into a recommended site structure for the client.
+
+### What Needs to Be Built
+- UI to create and manage a hierarchical sitemap (`sitemaps` table)
+- Section-level wireframe specs per page (`wireframe_sections` table)
+- Reference competitor pages as evidence for each recommendation
+- Eventually connect to content drafts (`content_drafts` table)
+
+### Dependencies
+- Feature 2 (insights) should be complete first — the sitemap builder's value comes from being informed by competitive intelligence
+- Feature 1 outputs feed into content recommendations per page
+
+---
+
+## What Was Completed Before This Session (for reference)
+
+- ✅ Interview chatbot core flow (n8n workflow + edge functions)
+- ✅ Dynamic question types (checkbox, multiselect, yesno, open)
+- ✅ Structured data extraction via `<extracted_data>` tags → `client_responses`
+- ✅ Document upload + processing (PDF via `unpdf`, DOCX via `mammoth`, TXT direct)
+- ✅ Auto-trigger on `interview_documents` INSERT (added Feb 17, 2026)
+- ✅ Site mapping workflow (Firecrawl Map → `competitor_pages`)
+- ✅ Batch scrape workflow (Firecrawl Batch → markdown/html content)
+- ✅ Database-driven page categorisation (`page_categories` table + `categorize_job_pages` RPC)
+- ✅ Company type classification on competitors
+- ✅ Settings UI for categories and company types
+- ✅ CompetitorActions UI with Map and Scrape Pending buttons
+- ✅ selected_options saving correctly for multiselect questions
+- ✅ `<extracted_data>` tags stripped from chat display
+
+---
+
+## Quick Reference
+
+### Key Endpoints
+- **Interview Chat Webhook**: `POST https://n8n.offshoot.co.nz/webhook/redesign/interview-chat`
+- **Interview Public Edge Function**: `https://bsloebohbsepdfoldsud.supabase.co/functions/v1/interview-public`
 - **n8n**: https://n8n.offshoot.co.nz
-- **GitHub**: https://github.com/900robman/competitor-compass.git
-- **Supabase Project**: Competitor_Intelligence_Dashboard
 
----
-
-## Migration Notes
-
-This project is being migrated from Lovable-based development to Claude Desktop local workflow. The `.claude/` directory structure has been created with:
-- `architecture.md` - Complete tech stack, database schema, integrations
-- `standards.md` - Code style, patterns, conventions
-- `context.md` - This file (current state, recent work, next steps)
-
-**Ready for local development setup when you are!**
+### Key Tables for Feature 1
+- `interview_sessions` — status field to update on completion
+- `interview_messages` — full conversation history
+- `client_responses` — 25 structured extracted records (the input for output generation)
+- `interview_context` — document analysis context
+- `interview_outputs` — where generated content goes (currently empty)
